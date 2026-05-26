@@ -22,9 +22,10 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
       });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string ,role: string[] };
     (req as any).userId = decoded.userId; // Assigning userId to req object for future use in controller
-
+    (req as any).role = decoded.role;
+    
     next();
   } catch (error) {
     return res.status(401).json({
