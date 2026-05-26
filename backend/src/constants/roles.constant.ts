@@ -1,0 +1,1 @@
+export const ROLE = ["PLAYER", "ORGANIZER"] as const;   

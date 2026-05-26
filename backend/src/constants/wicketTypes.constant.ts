@@ -1,0 +1,1 @@
+export const WICKET_TYPES = ["BOWLED", "CAUGHT", "STUMPED", "HIT_WICKET"] 

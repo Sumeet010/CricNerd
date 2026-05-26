@@ -1,0 +1,1 @@
+export const EXTRA_TYPES = ["NONE", "DEAD", "WIDE", "NO_BALL"] as const;
