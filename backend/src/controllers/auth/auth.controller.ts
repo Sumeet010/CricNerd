@@ -8,11 +8,11 @@ import { User } from "../../models/user.model";
 const JWT_SECRET = process.env.JWT_SECRET || "cricnerd-default-secret";
 const JWT_EXPIRES_IN = "7d";
 
-function generateToken(userId: string) {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+export function generateToken(userId: string, role: string[]) {
+  return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
-function setTokenCookie(res: Response, token: string) {
+export function setTokenCookie(res: Response, token: string) {
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -33,7 +33,7 @@ export async function registerHandler(req: Request, res: Response) {
       });
     }
 
-    const { email, username, password } = result.data;
+    const { email, username, password, role } = result.data;
 
     const existingUser = await User.findOne({ email });
 
@@ -50,9 +50,10 @@ export async function registerHandler(req: Request, res: Response) {
       email,
       passwordHashed,
       name: username,
+      role
     });
 
-    const token = generateToken(user._id.toString());
+    const token = generateToken(user._id.toString(), user.role);
     setTokenCookie(res, token);
 
     return res.status(201).json({
@@ -61,6 +62,7 @@ export async function registerHandler(req: Request, res: Response) {
         email: user.email,
         name: user.name,
         isEmailVerified: user.isEmailVerified,
+        role: user.role
       },
       token,
       message: "User registered successfully",
@@ -103,7 +105,7 @@ export async function loginHandler(req: Request, res: Response) {
       });
     }
 
-    const token = generateToken(user._id.toString());
+    const token = generateToken(user._id.toString(), user.role);
     setTokenCookie(res, token);
 
     return res.status(200).json({

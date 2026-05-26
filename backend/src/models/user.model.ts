@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ROLE } from "../constants/roles.constant";
 
 const userSchema = new mongoose.Schema({
     email:{
@@ -17,6 +18,12 @@ const userSchema = new mongoose.Schema({
     isEmailVerified:{
         type: Boolean,
         default:false
+    },
+    role:{
+        type: [String],
+        enum:ROLE,
+        default:"PLAYER",
+        required: true,
     }
 
 },{timestamps:true});
