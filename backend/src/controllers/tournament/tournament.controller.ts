@@ -214,3 +214,27 @@ export async function updateTournamentStatus(req: Request, res: Response) {
     });
   }
 }
+
+export async function myTournaments(req: Request, res: Response){
+  try{
+    const findMyTournaments = await Tournament.find({
+      organizerId: (req as any).userId,
+    }).lean();
+
+    if (!findMyTournaments){
+      return res.status(404).json({
+        message: "No tournaments found",
+      });
+    }
+
+    return res.status(200).json({
+      findMyTournaments,
+      message: "Tournaments fetched successfully",
+    });
+  } catch(error){
+    console.error(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+}
