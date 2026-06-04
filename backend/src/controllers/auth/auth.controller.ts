@@ -114,6 +114,7 @@ export async function loginHandler(req: Request, res: Response) {
         email: user.email,
         name: user.name,
         isEmailVerified: user.isEmailVerified,
+        role: user.role,
       },
       token,
       message: "Login successful",
