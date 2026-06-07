@@ -1,0 +1,26 @@
+Use findById - When querying against _id 
+Tournament.findById(tournamentId);
+ 
+Use find / findOne - When querying against our own fields
+PlayerTeamTournament.findOne({
+  playerId,
+  tournamentId
+});
+
+-------------------------------------------------------------------------------------------
+
+how createMatch controller check if the match exist already 
+it takes tournamentId in account because
+~ IPL 2025: Team A vs Team B ✅
+~ IPL 2026: Team A vs Team B ❌ (wrongly blocked if you don’t include tournamentId)
+
+also we take care of reverse order also 
+i.e team A vs team B 
+but to avoid team B vs Team A --> This also checks if the match exist!
+ $or: [
+    { teamAId, teamBId },
+    { teamAId: teamBId, teamBId: teamAId }
+  ]
+
+
+LEARN MORE ABOUT FILTER OBJECT

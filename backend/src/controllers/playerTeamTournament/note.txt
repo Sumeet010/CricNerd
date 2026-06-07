@@ -1,0 +1,6 @@
+Entity(CRUD) Delete karna hai tho use findByIdAndDelete(id)
+Relationship Delete karna hai tho use deleteOne({...Relationship ID's})
+
+getPlayerTournamentTeam --> player iss tournament mai konse team se khel rha hai!
+
+Always try to use Populate method while reading some data ,not while writing some data to db!
