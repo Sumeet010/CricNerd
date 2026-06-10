@@ -11,6 +11,7 @@ import { ballRouter } from "./routes/ball.routes";
 import { authRouter } from "./routes/auth.routes";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
+import { inviteRouter } from "./routes/Invite.routes";
 
 
 const app = express();
@@ -27,5 +28,6 @@ app.use("/tournaments", tournamentRouter);
 app.use("/tournaments", playerTeamTournamentRouter);
 app.use("/matches", matchRouter)
 app.use("/balls", ballRouter)
+app.use("/invites", inviteRouter)
 
 export default app;
