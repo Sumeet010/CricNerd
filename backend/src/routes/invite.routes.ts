@@ -1,10 +1,11 @@
-import { invite } from "../controllers/invite/invite.controller";
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware";
+import { requireRole } from "../middleware/requireRole.middleware";
+import { acceptInvite, getInviteByToken, invite } from "../controllers/invite/invite.controller";
 
 export const inviteRouter = Router();
 
-// UPDATE LATER for ownership checks
-inviteRouter.post("/", authMiddleware, invite);
-// Extract invite and get team, tournament , organizer info
+inviteRouter.post("/", authMiddleware, requireRole(["ORGANIZER"]), invite);
 
+inviteRouter.get("/:token", getInviteByToken);
+inviteRouter.post("/:token/accept",authMiddleware,requireRole(["PLAYER"]),acceptInvite);
