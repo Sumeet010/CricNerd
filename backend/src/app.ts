@@ -11,7 +11,7 @@ import { ballRouter } from "./routes/ball.routes";
 import { authRouter } from "./routes/auth.routes";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
-import { inviteRouter } from "./routes/Invite.routes";
+import { inviteRouter } from "./routes/invite.routes";
 
 
 const app = express();
