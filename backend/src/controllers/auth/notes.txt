@@ -1,3 +1,0 @@
-JWT is stateless, so a new token is issued on each login.
-Even if a token is sent during registration, login requires generating a new token to
-authenticate the user securely.
