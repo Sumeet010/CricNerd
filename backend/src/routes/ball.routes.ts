@@ -1,6 +1,8 @@
 import express from "express"
 import { addBall, undoLastBall } from "../controllers/ball/ball.controller"
 import { authMiddleware } from "../middleware/auth.middleware"
+import { requireRole } from "../middleware/requireRole.middleware"
+import { requireMatchOwnership } from "../middleware/requireMatchOwnership.middleware"
 
 export const ballRouter = express.Router()
 
@@ -29,7 +31,7 @@ export const ballRouter = express.Router()
  *       201:
  *         description: Ball recorded successfully
  */
-ballRouter.post("/", authMiddleware, addBall);
+ballRouter.post("/", authMiddleware, requireRole(["ORGANIZER"]), requireMatchOwnership, addBall);
 
 /**
  * @swagger
@@ -56,4 +58,4 @@ ballRouter.post("/", authMiddleware, addBall);
  *       404:
  *         description: Match or deliveries not found
  */
-ballRouter.post("/undo", authMiddleware, undoLastBall);
+ballRouter.post("/undo", authMiddleware, requireRole(["ORGANIZER"]), requireMatchOwnership, undoLastBall);
