@@ -47,7 +47,7 @@ export async function invite(req: Request, res: Response) {
     });
 
     return res.status(201).json({
-      inviteLink: `https://locahost:5173/invite/${token}`,
+      inviteLink: `http://localhost:5173/invite/${token}`,
     });
   } catch (error) {
     console.error(error);
@@ -118,9 +118,9 @@ export async function getInviteByToken(req: Request, res: Response) {
     // };
 
     return res.status(200).json({
-        tournamentName: tournament.tournamentName,
-        teamName: team.teamName,
-        expiresAt: invite.expiresAt
+      tournamentName: tournament.tournamentName,
+      teamName: team.teamName,
+      expiresAt: invite.expiresAt
     });
   } catch (error) {
     console.error(error);
@@ -161,7 +161,11 @@ export async function acceptInvite(req: Request, res: Response) {
       });
     }
 
-    const player = await Player.findById((req as any).userId).lean();
+    const player = await Player.findOne({
+      userId: (req as any).userId,
+    });
+
+    console.log(player)
 
     if (!player) {
       return res.status(404).json({
@@ -197,6 +201,55 @@ export async function acceptInvite(req: Request, res: Response) {
     console.error(error);
     return res.status(500).json({
       message: "Internal server error",
+    });
+  }
+}
+
+export async function getPendingInvites(req: Request, res: Response) {
+  try {
+    const invites = await Invite.find({
+      isUsed: false,
+      expiresAt: { $gt: new Date() }
+    })
+    .populate("tournamentId", "tournamentName")
+    .populate("teamId", "teamName")
+    .lean();
+
+    return res.status(200).json({
+      invites,
+      message: "Pending invitations fetched successfully"
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Internal server error"
+    });
+  }
+}
+
+export async function getAcceptedInvites(req: Request, res: Response) {
+  try {
+    const player = await Player.findOne({ userId: (req as any).userId });
+    if (!player) {
+      return res.status(200).json({
+        accepted: [],
+        message: "Player profile not found"
+      });
+    }
+
+    const accepted = await PlayerTeamTournament.find({ playerId: player._id })
+      .populate("tournamentId", "tournamentName")
+      .populate("teamId", "teamName")
+      .lean();
+
+    return res.status(200).json({
+      accepted,
+      message: "Accepted invitations fetched successfully"
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Internal server error"
     });
   }
 }

@@ -20,8 +20,7 @@ export async function addTournament(req: Request, res: Response) {
       });
     }
 
-    const { name, startDate, endDate, playingFormat, playingStatus } =
-      result.data;
+    const { name, startDate, endDate, playingFormat, playingStatus } = result.data;
 
     const tournamentExist = await Tournament.findOne({ tournamentName: name });
 
@@ -33,6 +32,7 @@ export async function addTournament(req: Request, res: Response) {
 
     validateTournamentDate(startDate, endDate, req, res);
     const userId = (req as any).userId;
+    // Need to check this logic now!
     // Upgrade user to ORGANIZER role if not already present
     const updatedUser = await User.findByIdAndUpdate(
       userId,

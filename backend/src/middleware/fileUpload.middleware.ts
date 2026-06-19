@@ -15,6 +15,6 @@ const storage: multer.StorageEngine = new GridFsStorage({
 
         };
     },
-}) as multer.StorageEngine;
+}) as any;
 
 export const uploadFile = multer({ storage });

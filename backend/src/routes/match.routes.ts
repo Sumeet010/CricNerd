@@ -79,7 +79,7 @@ matchRouter.post('/add', authMiddleware, authMiddleware,requireRole(["ORGANIZER"
  *       500:
  *         description: Internal server error
  */
-matchRouter.get('/get-matches', getMatches)
+matchRouter.get('/get-matches', authMiddleware, getMatches)
 
 /**
  * @swagger
@@ -97,7 +97,7 @@ matchRouter.get('/get-matches', getMatches)
  *       200:
  *         description: Match fetched
  */
-matchRouter.get('/get-match/:id', getMatchById)
+matchRouter.get('/get-match/:id', authMiddleware, getMatchById)
 
 /**
  * @swagger
@@ -260,7 +260,7 @@ matchRouter.patch('/:id/update-match-status', authMiddleware,requireRole(["ORGAN
  *       500:
  *         description: Internal server error
  */
-matchRouter.get('/:id/get-scorecard', getScorecard)
+matchRouter.get('/:id/get-scorecard', authMiddleware, getScorecard)
 
 /**
  * @swagger

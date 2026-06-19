@@ -1,0 +1,30 @@
+1. Open a connection
+
+From SERVER:
+io.on("connection", (socket))=>{
+    console.log("A user connected", socket.id);
+}
+
+From CLIENT:
+const socket = io("http://localhost:5000");
+
+2. EMIT (Send data)
+
+
+From CLIENT:
+socket.emit("message", data);
+
+SERVER RECIEVED (Client to Server):
+socket.on("message", (data)=>{
+    console.log(data);
+})
+
+3. SERVER BROADCAST (Server to All Clients):
+
+FROM SERVER:
+io.emit("scoreUpdated", score);
+
+TO CLIENTS:
+socket.on("scoreUpdated", (score) => {
+    console.log("Latest Score:", score);
+})

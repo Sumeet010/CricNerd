@@ -1,0 +1,10 @@
+npx -y create-vite@latest ./ -- --template react-ts
+npm install
+configure TSX config for "use client"
+npm install tailwindcss @tailwindcss/vite
+
+
+
+-- Many steps ignored
+
+npx -y shadcn@latest init -d -y

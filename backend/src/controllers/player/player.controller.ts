@@ -2,9 +2,19 @@ import { Request, Response } from "express";
 
 import { Player } from "../../models/player.model";
 import { Tournament } from "../../models/tournament.model";
+import { Team } from "../../models/team.model";
 import { PlayerTeamTournament } from "../../models/playerTeamTournament.model";
 import { playerSchema } from "./player.schema";
 import { paramsSchema } from "../../schemas/params.schema";
+import { z } from "zod";
+
+const registerPlayerSchema = z.object({
+    name: z.string().trim().min(1),
+    age: z.number().min(12, { message: "Player age must be at least 12" }),
+    playingRole: z.enum(["Batter", "Bowler", "Allrounder"]),
+    tournamentId: z.string().min(1),
+    teamId: z.string().min(1),
+});
 
 
 export async function addPlayer(req: Request, res: Response){
@@ -47,6 +57,47 @@ export async function addPlayer(req: Request, res: Response){
     }
     
 }  
+
+// Organizer-only: register a player and assign them to a tournament team
+export async function registerPlayer(req: Request, res: Response) {
+    try {
+        const result = registerPlayerSchema.safeParse(req.body);
+        if (!result.success) {
+            return res.status(400).json({ error: result.error });
+        }
+
+        const { name, age, playingRole, tournamentId, teamId } = result.data;
+        const userId = (req as any).userId;
+
+        // Verify team belongs to this tournament
+        const team = await Team.findOne({ _id: teamId, tournamentId }).lean();
+        if (!team) {
+            return res.status(404).json({ message: "Team not found in this tournament" });
+        }
+
+        // Create the player (no userId — organizer-registered)
+        const player = await Player.create({
+            fullName: name,
+            age,
+            playingRole,
+        });
+
+        // Assign player to the team in this tournament
+        await PlayerTeamTournament.create({
+            playerId: player._id,
+            teamId,
+            tournamentId,
+        });
+
+        return res.status(201).json({
+            player,
+            message: "Player registered and assigned to team successfully",
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
 
 export async function getPlayers(req: Request, res: Response){
     try {

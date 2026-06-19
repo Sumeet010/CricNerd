@@ -9,6 +9,8 @@ import { Player } from "../../models/player.model";
 import { Ball } from "../../models/ball.model";
 import { PlayerMatchStats } from "../../models/playerMatchStats.model";
 import { Tournament } from "../../models/tournament.model";
+import { getIO } from "../../services/socket.service";
+import { getScorecardData } from "../../services/scorecard.service";
 
 export async function addBall(req: Request, res: Response) {
   try {
@@ -418,6 +420,16 @@ export async function addBall(req: Request, res: Response) {
       }
     }
 
+    try {
+      const io = getIO();
+      const scorecardData = await getScorecardData(matchId);
+      if (scorecardData) {
+        io.emit("scorecardUpdate", scorecardData);
+      }
+    } catch (socketErr) {
+      console.error("Socket emit error in addBall:", socketErr);
+    }
+
     return res.status(201).json({
       newBall,
       message: "Ball recorded successfully",
@@ -529,6 +541,16 @@ export async function undoLastBall(req: Request, res: Response) {
 
     // 4. Delete the last ball
     await Ball.findByIdAndDelete(lastBall._id);
+
+    try {
+      const io = getIO();
+      const scorecardData = await getScorecardData(matchId);
+      if (scorecardData) {
+        io.emit("scorecardUpdate", scorecardData);
+      }
+    } catch (socketErr) {
+      console.error("Socket emit error in undoLastBall:", socketErr);
+    }
 
     return res.status(200).json({
       message: "Last delivery undone successfully",

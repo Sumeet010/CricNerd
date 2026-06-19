@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 
 import { Team } from "../../models/team.model";
+import { Tournament } from "../../models/tournament.model";
 import { teamSchema } from "./team.schema";
 import { paramsSchema } from "../../schemas/params.schema";
 
@@ -16,7 +17,10 @@ export async function addTeam(req: Request, res: Response) {
 
     const { name, tournamentId } = result.data;
 
-    const teamExist = await Team.findOne({ teamName: name });
+    const teamExist = await Team.findOne({ 
+      tournamentId,
+      teamName: name 
+    });
 
     if (teamExist) {
       return res.status(409).json({
@@ -53,6 +57,29 @@ export async function getTeams(req: Request, res: Response) {
     console.error(error);
     return res.status(500).json({
       message: "Internal serve error",
+    });
+  }
+}
+
+export async function getMyTeams(req: Request, res: Response) {
+  try {
+    const userId = (req as any).userId;
+
+    // Find all tournaments owned by this organizer
+    const myTournaments = await Tournament.find({ organizerId: userId }).select("_id").lean();
+    const tournamentIds = myTournaments.map((t) => t._id);
+
+    // Find teams that belong to those tournaments
+    const myTeams = await Team.find({ tournamentId: { $in: tournamentIds } }).lean();
+
+    return res.status(200).json({
+      allTeams: myTeams,
+      message: "Teams fetched successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Internal server error",
     });
   }
 }

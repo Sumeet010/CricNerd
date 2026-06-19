@@ -2,6 +2,11 @@ import mongoose  from "mongoose";
 import { PLAYING_ROLES } from "../constants/playingRole.constant";
 
 const playerSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+    },
     fullName:{
         type: String,
         required: true,
@@ -38,5 +43,15 @@ const playerSchema = new mongoose.Schema({
         default: 0
     }
 },{timestamps:true})
+
+// Users with accounts can still only have one player profile,
+// but organizer-created players (userId: null or missing) are allowed without conflict
+playerSchema.index(
+  { userId: 1 },
+  { 
+    unique: true, 
+    partialFilterExpression: { userId: { $type: "objectId" } } 
+  }
+);
 
 export const Player =  mongoose.model("Player",playerSchema)

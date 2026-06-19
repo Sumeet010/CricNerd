@@ -13,6 +13,24 @@ import { Match } from "../../models/match.model";
 import { Ball } from "../../models/ball.model";
 import { PlayerMatchStats } from "../../models/playerMatchStats.model";
 import { Player } from "../../models/player.model";
+import { getAccessibleTournamentIds } from "../../services/accessControl.service";
+import mongoose from "mongoose";
+import { getIO } from "../../services/socket.service";
+import { getScorecardData } from "../../services/scorecard.service";
+
+// helper fn
+async function checkAndCompleteTournament(tournamentId: mongoose.Types.ObjectId | string) {
+  const unfinishedMatches = await Match.countDocuments({
+    tournamentId,
+    matchStatus: { $ne: "COMPLETED" },
+  });
+
+  if (unfinishedMatches === 0) {
+    await Tournament.findByIdAndUpdate(tournamentId, {
+      playingStatus: "COMPLETED",
+    });
+  }
+}
 
 export async function createMatch(req: Request, res: Response) {
   try {
@@ -98,7 +116,6 @@ export async function createMatch(req: Request, res: Response) {
 
 export async function getMatches(req: Request, res: Response) {
   try {
-    // console.log(req.query);
     const result = getMatchSchema.safeParse(req.query);
     if (!result.success) {
       return res.status(400).json({
@@ -106,9 +123,22 @@ export async function getMatches(req: Request, res: Response) {
       });
     }
     const { tournamentId } = result.data;
+    const userId = (req as any).userId;
 
-    const filter = tournamentId ? { tournamentId } : {};
-    console.log(filter);
+    const accessibleTournaments = await getAccessibleTournamentIds(userId);
+
+    let filter: any = {};
+    if (tournamentId) {
+      if (!accessibleTournaments.includes(tournamentId.toString())) {
+        return res.status(403).json({
+          message: "Forbidden: You do not have access to this tournament's matches",
+        });
+      }
+      filter = { tournamentId };
+    } else {
+      filter = { tournamentId: { $in: accessibleTournaments } };
+    }
+
     const allMatches = await Match.find(filter).lean();
 
     return res.status(200).json({
@@ -134,13 +164,20 @@ export async function getMatchById(req: Request, res: Response) {
     }
 
     const { id } = result.data;
-    console.log(id);
+    const userId = (req as any).userId;
 
     const matchExist = await Match.findById(id).lean();
 
     if (!matchExist) {
       return res.status(404).json({
         message: "Match not found",
+      });
+    }
+
+    const accessibleTournaments = await getAccessibleTournamentIds(userId);
+    if (!accessibleTournaments.includes(matchExist.tournamentId.toString())) {
+      return res.status(403).json({
+        message: "Forbidden: You do not have access to this match",
       });
     }
 
@@ -242,6 +279,20 @@ export async function updateMatchStatus(req: Request, res: Response) {
 
     await Match.updateOne({ _id: id }, { matchStatus });
 
+    if (matchStatus === "COMPLETED") {
+      await checkAndCompleteTournament(match.tournamentId);
+    }
+
+    try {
+      const io = getIO();
+      const scorecardData = await getScorecardData(id);
+      if (scorecardData) {
+        io.emit("scorecardUpdate", scorecardData);
+      }
+    } catch (socketErr) {
+      console.error("Socket emit error in updateMatchStatus:", socketErr);
+    }
+
     return res.status(200).json({
       message: `Match status updated to ${matchStatus}`,
     });
@@ -263,6 +314,7 @@ export async function getScorecard(req: Request, res: Response) {
     }
 
     const { id } = result.data;
+    const userId = (req as any).userId;
 
     const match = await Match.findById(id)
       .populate("teamAId teamBId", "teamName")
@@ -274,15 +326,22 @@ export async function getScorecard(req: Request, res: Response) {
       });
     }
 
+    const accessibleTournaments = await getAccessibleTournamentIds(userId);
+    if (!accessibleTournaments.includes(match.tournamentId.toString())) {
+      return res.status(403).json({
+        message: "Forbidden: You do not have access to this scorecard",
+      });
+    }
+
     const matchScore = {
       teamA: {
-        teamName: match?.teamAId.teamName,
+        teamName: (match?.teamAId as any).teamName,
         teamAScore: match?.teamAScore,
         teamAWickets: match?.teamAWickets,
         teamABalls: match?.teamABalls,
       },
       teamB: {
-        teamName: match?.teamBId.teamName,
+        teamName: (match?.teamBId as any).teamName,
         teamBScore: match?.teamBScore,
         teamBWickets: match?.teamBWickets,
         teamBBalls: match?.teamBBalls,
@@ -297,7 +356,7 @@ export async function getScorecard(req: Request, res: Response) {
       .lean();
 
     const batters = battingStats.map((p) => ({
-      playerName: p.playerId.fullName,
+      playerName: (p.playerId as any).fullName,
       runs: p.runs,
       balls: p.ballsFaced,
       // strikeRate
@@ -311,7 +370,7 @@ export async function getScorecard(req: Request, res: Response) {
       .lean();
 
     const bowlers = bowlingStats.map((p) => ({
-      playerName: p.playerId.fullName,
+      playerName: (p.playerId as any).fullName,
       wickets: p.wicketsTaken,
       runsConceded: p.runsConceded,
       overs: Math.floor(p.ballsBowled / 6) + "." + (p.ballsBowled % 6),
@@ -406,6 +465,9 @@ export async function endMatch(req: Request, res: Response) {
       );
     }
 
+    // Check if all tournament matches are now completed → auto-complete tournament
+    await checkAndCompleteTournament(match.tournamentId);
+
     // Updating Indiviual Player Stats
     const playerStats = await PlayerMatchStats.find({ matchId: id });
 
@@ -428,6 +490,16 @@ export async function endMatch(req: Request, res: Response) {
           },
         },
       );
+    }
+
+    try {
+      const io = getIO();
+      const scorecardData = await getScorecardData(id);
+      if (scorecardData) {
+        io.emit("scorecardUpdate", scorecardData);
+      }
+    } catch (socketErr) {
+      console.error("Socket emit error in endMatch:", socketErr);
     }
 
     return res.status(200).json({
