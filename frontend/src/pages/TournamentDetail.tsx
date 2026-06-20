@@ -431,6 +431,7 @@ function AddPlayerModal({ tournamentId, teamId, teams, onSuccess, onCancel }: Ad
     if (!form.name.trim()) { setError("Name is required"); return; }
     const ageNum = parseInt(form.age);
     if (isNaN(ageNum) || ageNum < 12) { setError("Age must be ≥ 12"); return; }
+    if (ageNum > 70) { setError("Age must be ≤ 70 to play a tournament"); return; }
     if (!selectedTeamId) { setError("Please select a team"); return; }
     setCreating(true);
     setError(null);
@@ -485,6 +486,7 @@ function AddPlayerModal({ tournamentId, teamId, teams, onSuccess, onCancel }: Ad
           <Input
             type="number"
             min={12}
+            max={70}
             value={form.age}
             onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
             placeholder="e.g. 25"
@@ -903,6 +905,89 @@ function PlayersTab({
   );
 }
 
+/* ─── Edit Tournament Modal ─── */
+interface EditTournamentModalContentProps {
+  tournament: Tournament;
+  onSuccess: (updated: Tournament) => void;
+  onCancel: () => void;
+}
+
+function EditTournamentModalContent({
+  tournament,
+  onSuccess,
+  onCancel,
+}: EditTournamentModalContentProps) {
+  const [name, setName] = useState(tournament.tournamentName);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setError("Tournament name is required.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await tournamentService.update(tournament._id, { tournamentName: name.trim() });
+      onSuccess(res.tournament);
+    } catch (err: any) {
+      setError(err.message || "Failed to update tournament.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="flex items-center gap-2 bg-red-950/60 border border-red-700/60 text-red-400 text-xs px-3 py-2.5 rounded-lg">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Tournament Name */}
+      <div className="space-y-1.5">
+        <label className="text-zinc-300 text-xs font-semibold">Tournament Name</label>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Premier League"
+          className="bg-[#1e1e22] border-zinc-800 text-white focus-visible:border-zinc-700 focus-visible:ring-zinc-800"
+          disabled={loading}
+          autoFocus
+        />
+      </div>
+
+      <div className="flex justify-end gap-3 pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={loading}
+          className="border-zinc-700 hover:bg-zinc-800 text-zinc-300 text-xs bg-transparent hover:text-white"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={loading}
+          className="bg-[#fcf8e3] text-black hover:bg-[#f5eea5] text-xs font-semibold flex items-center gap-1.5"
+        >
+          {loading ? (
+            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
+          ) : (
+            <>Save Changes</>
+          )}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 /* ═══════════════════════════════════════════════
    MAIN PAGE
 ═══════════════════════════════════════════════ */
@@ -919,6 +1004,7 @@ export default function TournamentDetail() {
   const [error, setError] = useState<string | null>(null);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
+  const [isEditTournamentModalOpen, setIsEditTournamentModalOpen] = useState(false);
   const [matchStatusFilter, setMatchStatusFilter] = useState<"ALL" | "SCHEDULED" | "LIVE" | "COMPLETED">("ALL");
 
   const isOwner = !!(user && tournament && user._id === tournament.organizerId);
@@ -1130,7 +1216,10 @@ export default function TournamentDetail() {
               <div className="bg-[#0b36aa] h-40 rounded-lg relative flex items-center justify-center p-4">
                 {/* Edit button top-right */}
                 {isOwner && (
-                  <button className="absolute top-2 right-2 bg-white/10 text-white hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                  <button
+                    onClick={() => setIsEditTournamentModalOpen(true)}
+                    className="absolute top-2 right-2 bg-white/10 text-white hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
                     <Pencil className="w-3.5 h-3.5" /> Edit Tournament
                   </button>
                 )}
@@ -1642,12 +1731,12 @@ export default function TournamentDetail() {
 
                             {/* Winner declaration */}
                             {m.matchStatus === "COMPLETED" && (
-                              <div className="text-center text-xs font-bold text-[#fcf8e3] bg-zinc-800/40 border border-zinc-700/30 rounded-lg px-2.5 py-1.5 flex items-center justify-center gap-1.5">
+                              <div className="text-center text-green-400 text-xs font-bold text-[#fcf8e3] bg-zinc-800/40 border border-zinc-700/30 rounded-lg px-2.5 py-1.5 flex items-center justify-center gap-1.5">
                                 {m.winnerTeamId ? (
                                   m.winnerTeamId === teamA?._id ? (
-                                    <span> Winner: <span className="text-white">{teamA?.teamName}</span></span>
+                                    <span> Winner: <span className="text-green-400">{teamA?.teamName}</span></span>
                                   ) : m.winnerTeamId === teamB?._id ? (
-                                    <span> Winner: <span className="text-white">{teamB?.teamName}</span></span>
+                                    <span> Winner: <span className="text-green-400">{teamB?.teamName}</span></span>
                                   ) : (
                                     <span> Winner declared!</span>
                                   )
@@ -1799,6 +1888,24 @@ export default function TournamentDetail() {
               }
             }}
             onCancel={() => setIsTeamModalOpen(false)}
+          />
+        </Modal>
+      )}
+      {/* Edit Tournament Modal */}
+      {isEditTournamentModalOpen && tournament && (
+        <Modal
+          title="Edit Tournament"
+          description="Update the details of your tournament below."
+          open={isEditTournamentModalOpen}
+          onOpenChange={setIsEditTournamentModalOpen}
+        >
+          <EditTournamentModalContent
+            tournament={tournament}
+            onSuccess={(updated) => {
+              setTournament(updated);
+              setIsEditTournamentModalOpen(false);
+            }}
+            onCancel={() => setIsEditTournamentModalOpen(false)}
           />
         </Modal>
       )}

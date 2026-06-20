@@ -187,7 +187,7 @@ export default function InviteAccept() {
         <Card className="w-full bg-[#151518] border border-zinc-800 shadow-xl">
           <CardHeader className="text-center pt-8">
             <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-2" />
-            <CardTitle className="text-xl text-white font-bold">Invitation Error</CardTitle>
+            <CardTitle className="text-xl text-white font-bold">Invitation Expired</CardTitle>
             <CardDescription className="text-zinc-500 text-xs mt-1">
               {inviteError}
             </CardDescription>

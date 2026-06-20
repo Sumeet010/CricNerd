@@ -15,13 +15,13 @@ const tournamentSchema = new mongoose.Schema({
     },
    startDate:{
         type: Date,
-        required: true,
-        min: Date.now()
+        min: Date.now(),
+        required: true
    },
    endDate:{
         type: Date,
-        required: true,
-        min: Date.now()
+        min: Date.now(),
+        required: true
    },
    playingFormat:{
         type: String,

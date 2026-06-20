@@ -141,6 +141,10 @@ export interface UpdateTournamentStatusRequest {
   playingStatus: PlayingStatus;
 }
 
+export interface UpdateTournamentRequest {
+  tournamentName: string;
+}
+
 export interface CreateMatchRequest {
   tournamentId: string;
   teamAId: string;

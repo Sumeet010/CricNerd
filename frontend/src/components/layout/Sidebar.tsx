@@ -8,8 +8,7 @@ import {
   LogOut,
   UserRound,
   Users,
-  TrendingUp,
-  Settings
+  TrendingUp
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { matchService, teamService } from "../../services";
@@ -118,8 +117,7 @@ export function Sidebar() {
     { name: "My Tournaments", tab: "tournaments", icon: Trophy },
     { name: "My Teams", tab: "teams", icon: Users },
     { name: "Invitations", tab: "invitations", icon: Swords },
-    { name: "Statistics", tab: "statistics", icon: TrendingUp },
-    { name: "Settings", tab: "settings", icon: Settings }
+    { name: "Statistics", tab: "statistics", icon: TrendingUp }
   ];
 
   // Derive dynamic user details

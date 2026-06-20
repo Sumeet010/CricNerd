@@ -97,7 +97,15 @@ export const api = {
     });
   },
 
-  // 4. DELETE requests: Used to remove data (like deleting a team)
+  // 4. PUT requests: Used to replace or update existing data
+  async put<T = any>(endpoint: string, data: any) {
+    return await request<T>(endpoint, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 5. DELETE requests: Used to remove data (like deleting a team)
   async delete<T = any>(endpoint: string) {
     return await request<T>(endpoint, { 
       method: "DELETE" 

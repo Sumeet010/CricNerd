@@ -6,6 +6,7 @@ import type {
   CreateTeamRequest,
   CreateTournamentRequest,
   UpdateTournamentStatusRequest,
+  UpdateTournamentRequest,
   CreateMatchRequest,
   UpdateMatchStatusRequest,
   AddBallRequest,
@@ -112,6 +113,9 @@ export const tournamentService = {
   
   updateStatus: (id: string, data: UpdateTournamentStatusRequest) =>
     api.patch<ApiResponse<any>>(`/tournaments/${id}/update-tournament-format`, data),
+
+  update: (id: string, data: UpdateTournamentRequest) =>
+    api.put<{ tournament: any; message: string }>(`/tournaments/${id}`, data),
 };
 
 // --- Squad (Player-Team-Tournament) ---
@@ -178,9 +182,6 @@ export const inviteService = {
   
   accept: (token: string) =>
     api.post<{ message: string }>(`/invites/${token}/accept`, {}),
-
-  getPending: () =>
-    api.get<{ invites: any[]; message: string }>("/invites/pending"),
 
   getAccepted: () =>
     api.get<{ accepted: any[]; message: string }>("/invites/accepted"),

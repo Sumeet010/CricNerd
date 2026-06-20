@@ -34,6 +34,7 @@ export async function getScorecardData(matchId: string) {
     .lean();
 
   const batters = battingStats.map((p: any) => ({
+    playerId: p.playerId?._id?.toString() || "",
     playerName: p.playerId?.fullName || "Unknown",
     runs: p.runs,
     balls: p.ballsFaced,
@@ -47,6 +48,7 @@ export async function getScorecardData(matchId: string) {
     .lean();
 
   const bowlers = bowlingStats.map((p: any) => ({
+    playerId: p.playerId?._id?.toString() || "",
     playerName: p.playerId?.fullName || "Unknown",
     wickets: p.wicketsTaken,
     runsConceded: p.runsConceded,

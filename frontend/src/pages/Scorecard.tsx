@@ -219,6 +219,52 @@ export default function Scorecard() {
     };
   }, [matchId]);
 
+  // Keep battingTeamId in sync for viewers/players when innings switches
+  useEffect(() => {
+    if (isOwner) return; // Organizer controls this manually via UI
+
+    if (match) {
+      // Find the last recorded ball
+      const lastBall: any = scorecardData?.allBalls
+        ?.slice()
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+      if (lastBall) {
+        let currentBatting = lastBall.battingTeamId;
+
+        // Check if that team's innings is already complete (all out or overs done)
+        const isTeamA = currentBatting === match.teamAId;
+        const balls = isTeamA ? match.teamABalls : match.teamBBalls;
+        const wickets = isTeamA ? match.teamAWickets : match.teamBWickets;
+        const squad = isTeamA ? squadA : squadB;
+        const maxW = squad.length > 0 ? squad.length : 10;
+        
+        let maxO = 20;
+        if (tournament) {
+          if (tournament.playingFormat === "5 Overs") maxO = 5;
+          else if (tournament.playingFormat === "6 Overs") maxO = 6;
+          else if (tournament.playingFormat === "20 Overs") maxO = 20;
+        }
+
+        const isComplete = wickets >= maxW || Math.floor(balls / 6) >= maxO;
+
+        if (isComplete) {
+          // If the last ball's batting team is complete, switch to the other team
+          currentBatting = isTeamA ? match.teamBId : match.teamAId;
+        }
+
+        if (battingTeamId !== currentBatting) {
+          setBattingTeamId(currentBatting);
+        }
+      } else {
+        // No balls bowled yet -> default to Team A
+        if (battingTeamId !== match.teamAId) {
+          setBattingTeamId(match.teamAId);
+        }
+      }
+    }
+  }, [scorecardData, match, isOwner, squadA, squadB, tournament, battingTeamId]);
+
   const handleRefresh = async () => {
     setLoading(true);
     await loadMatchData();
@@ -379,6 +425,26 @@ export default function Scorecard() {
   const currentOverBalls = scorecardData?.allBalls
     ?.filter((b: any) => b.battingTeamId === battingTeamId && b.overNumber === nextOverNumber)
     ?.sort((a: any, b: any) => a.createdAt - b.createdAt) ?? [];
+
+  // Derive current active striker & bowler from the last recorded ball.
+  // For the organizer the local picker state (strikerId/bowlerId) takes precedence
+  // since they may have already selected the next pair before recording.
+  // For players/viewers these will always be "" so we fall back to the last ball.
+  const lastBall: any = scorecardData?.allBalls
+    ?.slice()
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+  const activeBattingTeamId = battingTeamId || lastBall?.battingTeamId || "";
+
+  // Only use striker/bowler from last ball if it was bowled in the current innings
+  const lastBallMatchesCurrentInnings = lastBall && lastBall.battingTeamId === activeBattingTeamId;
+
+  const activeStrikerId  = strikerId  || (lastBallMatchesCurrentInnings ? lastBall?.strikerId : "") || "";
+  const activeBowlerId   = bowlerId   || (lastBallMatchesCurrentInnings ? lastBall?.bowlerId : "")  || "";
+
+  const activeBattingSquad = activeBattingTeamId === match?.teamAId ? squadA : squadB;
+  const activeBowlingSquad = activeBattingTeamId === match?.teamAId ? squadB : squadA;
+
 
   return (
     <Layout title="Live Scorecard" subtitle="MATCH DASHBOARD">
@@ -546,8 +612,8 @@ export default function Scorecard() {
                     {/* Headers & Innings Toggle */}
                     <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
                       <div>
-                        <h3 className="text-white font-bold text-sm">Interactive Live Scorer</h3>
-                        <p className="text-zinc-500 text-[11px] mt-0.5">Record individual deliveries below to update scores in real-time</p>
+                        <h3 className="text-white font-bold text-sm">Live Scorer</h3>
+                        <p className="text-zinc-500 text-[11px] mt-0.5">Record individual deliveries below to update scores </p>
                       </div>
                       <button
                         onClick={handleToggleInnings}
@@ -747,99 +813,197 @@ export default function Scorecard() {
             )}
 
             {/* TAB: Scorecard Tables */}
-            {activeTab === "Scorecard" && (
-              <div className="space-y-6">
-                
-                {/* Innings 1 / Team A scorecard */}
-                <div className="bg-[#161618] border border-zinc-800/80 rounded-2xl overflow-hidden p-6 space-y-4">
-                  <div className="border-b border-zinc-800/80 pb-3 flex items-center justify-between">
-                    <h3 className="text-white font-bold text-sm">{teamA?.teamName} Innings</h3>
-                    <span className="text-zinc-500 text-xs font-bold">{match.teamAScore}/{match.teamAWickets} ({Math.floor(match.teamABalls / 6)}.{match.teamABalls % 6} ov)</span>
-                  </div>
+            {activeTab === "Scorecard" && (() => {
+              const isTeamAPlayer = (playerId: string, playerName: string) => {
+                return squadA.some(p => p._id === playerId || p.fullName === playerName);
+              };
 
-                  {/* Batters stats table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="text-zinc-500 font-extrabold uppercase border-b border-zinc-800 pb-2">
-                          <th className="py-2">Batter</th>
-                          <th className="py-2 text-right">Runs</th>
-                          <th className="py-2 text-right">Balls</th>
-                          <th className="py-2 text-right">4s</th>
-                          <th className="py-2 text-right">6s</th>
-                          <th className="py-2 text-right">SR</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-900/60">
-                        {scorecardData?.batters && scorecardData.batters.length > 0 ? (
-                          scorecardData.batters.map((b, idx) => (
-                            <tr key={idx} className="text-zinc-300 font-semibold hover:bg-zinc-800/10">
-                              <td className="py-3 text-white">{b.playerName}</td>
-                              <td className="py-3 text-right text-white font-bold">{b.runs}</td>
-                              <td className="py-3 text-right text-zinc-400">{b.balls}</td>
-                              <td className="py-3 text-right text-zinc-400">0</td>
-                              <td className="py-3 text-right text-zinc-400">0</td>
-                              <td className="py-3 text-right text-zinc-400">
-                                {b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : "0.0"}
-                              </td>
+              const isTeamBPlayer = (playerId: string, playerName: string) => {
+                return squadB.some(p => p._id === playerId || p.fullName === playerName);
+              };
+
+              const teamABatters = scorecardData?.batters?.filter(b => isTeamAPlayer(b.playerId, b.playerName)) ?? [];
+              const teamBBatters = scorecardData?.batters?.filter(b => isTeamBPlayer(b.playerId, b.playerName)) ?? [];
+
+              const teamABowlers = scorecardData?.bowlers?.filter(b => isTeamAPlayer(b.playerId, b.playerName)) ?? [];
+              const teamBBowlers = scorecardData?.bowlers?.filter(b => isTeamBPlayer(b.playerId, b.playerName)) ?? [];
+
+              return (
+                <div className="space-y-8">
+                  
+                  {/* Innings 1 / Team A scorecard */}
+                  <div className="bg-[#161618] border border-zinc-800/80 rounded-2xl overflow-hidden p-6 space-y-6">
+                    <div className="border-b border-zinc-800/80 pb-3 flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <h3 className="text-white font-bold text-sm">{teamA?.teamName} Innings</h3>
+                        <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">1st Innings Scorecard</span>
+                      </div>
+                      <span className="text-zinc-400 text-xs font-black bg-zinc-900 border border-zinc-800/60 px-3 py-1.5 rounded-lg">
+                        {match.teamAScore}/{match.teamAWickets} ({Math.floor(match.teamABalls / 6)}.{match.teamABalls % 6} ov)
+                      </span>
+                    </div>
+
+                    {/* Batters stats table */}
+                    <div className="space-y-3">
+                      <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Batting</span>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="text-zinc-500 font-extrabold uppercase border-b border-zinc-800 pb-2">
+                              <th className="py-2">Batter</th>
+                              <th className="py-2 text-right">Runs</th>
+                              <th className="py-2 text-right">Balls</th>
+                              <th className="py-2 text-right">SR</th>
                             </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={6} className="py-6 text-center text-zinc-600 font-medium">No batting statistics recorded yet</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-900/60">
+                            {teamABatters.length > 0 ? (
+                              teamABatters.map((b, idx) => (
+                                <tr key={idx} className="text-zinc-300 font-semibold hover:bg-zinc-800/10">
+                                  <td className="py-3 text-white">{b.playerName}</td>
+                                  <td className="py-3 text-right text-white font-bold">{b.runs}</td>
+                                  <td className="py-3 text-right text-zinc-400">{b.balls}</td>
+                                  <td className="py-3 text-right text-zinc-400 font-bold">
+                                    {b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : "0.0"}
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={4} className="py-6 text-center text-zinc-650 font-medium">No batting statistics recorded for this innings</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
 
-                {/* Innings 2 / Team B scorecard */}
-                <div className="bg-[#161618] border border-zinc-800/80 rounded-2xl overflow-hidden p-6 space-y-4">
-                  <div className="border-b border-zinc-800/80 pb-3 flex items-center justify-between">
-                    <h3 className="text-white font-bold text-sm">{teamB?.teamName} Innings</h3>
-                    <span className="text-zinc-500 text-xs font-bold">
-                      {(match.teamBBalls > 0 || match.teamBWickets > 0 || match.teamBScore > 0) ? `${match.teamBScore}/${match.teamBWickets} (${Math.floor(match.teamBBalls / 6)}.${match.teamBBalls % 6} ov)` : "Yet to bat"}
-                    </span>
-                  </div>
-
-                  {/* Bowlers stats table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="text-zinc-500 font-extrabold uppercase border-b border-zinc-800 pb-2">
-                          <th className="py-2">Bowler</th>
-                          <th className="py-2 text-right">Overs</th>
-                          <th className="py-2 text-right">Runs</th>
-                          <th className="py-2 text-right">Wickets</th>
-                          <th className="py-2 text-right">Econ</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-900/60">
-                        {scorecardData?.bowlers && scorecardData.bowlers.length > 0 ? (
-                          scorecardData.bowlers.map((b, idx) => (
-                            <tr key={idx} className="text-zinc-300 font-semibold hover:bg-zinc-800/10">
-                              <td className="py-3 text-white">{b.playerName}</td>
-                              <td className="py-3 text-right text-zinc-400">{b.overs}</td>
-                              <td className="py-3 text-right text-white font-bold">{b.runsConceded}</td>
-                              <td className="py-3 text-right text-white font-bold">{b.wickets}</td>
-                              <td className="py-3 text-right text-zinc-400">
-                                {parseFloat(b.overs) > 0 ? (b.runsConceded / parseFloat(b.overs)).toFixed(2) : "0.00"}
-                              </td>
+                    {/* Bowlers stats table */}
+                    <div className="space-y-3 pt-2">
+                      <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Bowling</span>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="text-zinc-500 font-extrabold uppercase border-b border-zinc-800 pb-2">
+                              <th className="py-2">Bowler</th>
+                              <th className="py-2 text-right">Overs</th>
+                              <th className="py-2 text-right">Runs</th>
+                              <th className="py-2 text-right">Wickets</th>
+                              <th className="py-2 text-right">Econ</th>
                             </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={5} className="py-6 text-center text-zinc-600 font-medium">No bowling statistics recorded yet</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-900/60">
+                            {teamBBowlers.length > 0 ? (
+                              teamBBowlers.map((b, idx) => (
+                                <tr key={idx} className="text-zinc-300 font-semibold hover:bg-zinc-800/10">
+                                  <td className="py-3 text-white">{b.playerName}</td>
+                                  <td className="py-3 text-right text-zinc-400">{b.overs}</td>
+                                  <td className="py-3 text-right text-white font-bold">{b.runsConceded}</td>
+                                  <td className="py-3 text-right text-white font-bold">{b.wickets}</td>
+                                  <td className="py-3 text-right text-zinc-400 font-bold">
+                                    {parseFloat(b.overs) > 0 ? (b.runsConceded / parseFloat(b.overs)).toFixed(2) : "0.00"}
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={5} className="py-6 text-center text-zinc-650 font-medium">No bowling statistics recorded for this innings</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-              </div>
-            )}
+                  {/* Innings 2 / Team B scorecard */}
+                  <div className="bg-[#161618] border border-zinc-800/80 rounded-2xl overflow-hidden p-6 space-y-6">
+                    <div className="border-b border-zinc-800/80 pb-3 flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <h3 className="text-white font-bold text-sm">{teamB?.teamName} Innings</h3>
+                        <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider">2nd Innings Scorecard</span>
+                      </div>
+                      <span className="text-zinc-400 text-xs font-black bg-zinc-900 border border-zinc-800/60 px-3 py-1.5 rounded-lg">
+                        {(match.teamBBalls > 0 || match.teamBWickets > 0 || match.teamBScore > 0) ? `${match.teamBScore}/${match.teamBWickets} (${Math.floor(match.teamBBalls / 6)}.${match.teamBBalls % 6} ov)` : "Yet to bat"}
+                      </span>
+                    </div>
+
+                    {/* Batters stats table */}
+                    <div className="space-y-3">
+                      <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Batting</span>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="text-zinc-500 font-extrabold uppercase border-b border-zinc-800 pb-2">
+                              <th className="py-2">Batter</th>
+                              <th className="py-2 text-right">Runs</th>
+                              <th className="py-2 text-right">Balls</th>
+                              <th className="py-2 text-right">SR</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-900/60">
+                            {teamBBatters.length > 0 ? (
+                              teamBBatters.map((b, idx) => (
+                                <tr key={idx} className="text-zinc-300 font-semibold hover:bg-zinc-800/10">
+                                  <td className="py-3 text-white">{b.playerName}</td>
+                                  <td className="py-3 text-right text-white font-bold">{b.runs}</td>
+                                  <td className="py-3 text-right text-zinc-400">{b.balls}</td>
+                                  <td className="py-3 text-right text-zinc-400 font-bold">
+                                    {b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : "0.0"}
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={4} className="py-6 text-center text-zinc-650 font-medium">No batting statistics recorded for this innings</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Bowlers stats table */}
+                    <div className="space-y-3 pt-2">
+                      <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Bowling</span>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="text-zinc-500 font-extrabold uppercase border-b border-zinc-800 pb-2">
+                              <th className="py-2">Bowler</th>
+                              <th className="py-2 text-right">Overs</th>
+                              <th className="py-2 text-right">Runs</th>
+                              <th className="py-2 text-right">Wickets</th>
+                              <th className="py-2 text-right">Econ</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-900/60">
+                            {teamABowlers.length > 0 ? (
+                              teamABowlers.map((b, idx) => (
+                                <tr key={idx} className="text-zinc-300 font-semibold hover:bg-zinc-800/10">
+                                  <td className="py-3 text-white">{b.playerName}</td>
+                                  <td className="py-3 text-right text-zinc-400">{b.overs}</td>
+                                  <td className="py-3 text-right text-white font-bold">{b.runsConceded}</td>
+                                  <td className="py-3 text-right text-white font-bold">{b.wickets}</td>
+                                  <td className="py-3 text-right text-zinc-400 font-bold">
+                                    {parseFloat(b.overs) > 0 ? (b.runsConceded / parseFloat(b.overs)).toFixed(2) : "0.00"}
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={5} className="py-6 text-center text-zinc-650 font-medium">No bowling statistics recorded for this innings</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })()}
 
             {/* TAB: Over Log */}
             {activeTab === "Over Log" && (
@@ -931,20 +1095,20 @@ export default function Scorecard() {
             <div className="bg-[#161618] border border-zinc-800/80 rounded-2xl p-5 space-y-4">
               <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Batter</span>
               <div className="space-y-3.5">
-                {strikerId ? (
+                {activeStrikerId ? (
                   <div className="flex justify-between items-center bg-[#121214]/50 border border-zinc-850 p-3 rounded-xl">
                     <div className="min-w-0">
                       <h4 className="text-white font-extrabold text-xs truncate flex items-center gap-1">
-                        🏏 {battingSquad.find(p => p._id === strikerId)?.fullName}
+                        🏏 {activeBattingSquad.find(p => p._id === activeStrikerId)?.fullName}
                       </h4>
                       <span className="text-zinc-500 text-[10px] font-semibold">Striker · Not Out</span>
                     </div>
                     <div className="text-right">
                       <span className="text-white font-black text-sm">
-                        {scorecardData?.batters?.find(b => b.playerName === battingSquad.find(p => p._id === strikerId)?.fullName)?.runs ?? 0}
+                        {scorecardData?.batters?.find(b => b.playerName === activeBattingSquad.find(p => p._id === activeStrikerId)?.fullName)?.runs ?? 0}
                       </span>
                       <span className="text-zinc-500 text-xs ml-0.5">
-                        ({scorecardData?.batters?.find(b => b.playerName === battingSquad.find(p => p._id === strikerId)?.fullName)?.balls ?? 0})
+                        ({scorecardData?.batters?.find(b => b.playerName === activeBattingSquad.find(p => p._id === activeStrikerId)?.fullName)?.balls ?? 0})
                       </span>
                     </div>
                   </div>
@@ -959,20 +1123,19 @@ export default function Scorecard() {
             {/* Active Bowler Details */}
             <div className="bg-[#161618] border border-zinc-800/80 rounded-2xl p-5 space-y-4">
               <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Bowlers</span>
-              {bowlerId ? (
+              {activeBowlerId ? (
                 <div className="flex justify-between items-center bg-[#121214]/50 border border-zinc-850 p-3 rounded-xl">
                   <div className="min-w-0">
                     <h4 className="text-white font-extrabold text-xs truncate">
-                      ⚡ {bowlingSquad.find(p => p._id === bowlerId)?.fullName}
+                      ⚡ {activeBowlingSquad.find(p => p._id === activeBowlerId)?.fullName}
                     </h4>
-                    {/* <span className="text-zinc-500 text-[10px] font-semibold">Right Arm Fast</span> */}
                   </div>
                   <div className="text-right">
                     <span className="text-white font-black text-sm block">
-                      {scorecardData?.bowlers?.find(b => b.playerName === bowlingSquad.find(p => p._id === bowlerId)?.fullName)?.wickets ?? 0}W - {scorecardData?.bowlers?.find(b => b.playerName === bowlingSquad.find(p => p._id === bowlerId)?.fullName)?.runsConceded ?? 0}R
+                      {scorecardData?.bowlers?.find(b => b.playerName === activeBowlingSquad.find(p => p._id === activeBowlerId)?.fullName)?.wickets ?? 0}W - {scorecardData?.bowlers?.find(b => b.playerName === activeBowlingSquad.find(p => p._id === activeBowlerId)?.fullName)?.runsConceded ?? 0}R
                     </span>
                     <span className="text-zinc-550 text-[10px] font-semibold block mt-0.5">
-                      {scorecardData?.bowlers?.find(b => b.playerName === bowlingSquad.find(p => p._id === bowlerId)?.fullName)?.overs ?? "0.0"} ov
+                      {scorecardData?.bowlers?.find(b => b.playerName === activeBowlingSquad.find(p => p._id === activeBowlerId)?.fullName)?.overs ?? "0.0"} ov
                     </span>
                   </div>
                 </div>

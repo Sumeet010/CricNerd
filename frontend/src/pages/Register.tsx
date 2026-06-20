@@ -173,7 +173,7 @@ export default function Register() {
                     <FormLabel className="text-zinc-300 font-medium text-xs">Username / Display Name</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g. sumeetgupta"
+                        placeholder="e.g. Virat Kohli"
                         {...field}
                         className="bg-[#1e1e22] border-zinc-800 text-white placeholder-zinc-600 focus-visible:border-zinc-700 focus-visible:ring-zinc-800"
                       />

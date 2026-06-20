@@ -205,27 +205,6 @@ export async function acceptInvite(req: Request, res: Response) {
   }
 }
 
-export async function getPendingInvites(req: Request, res: Response) {
-  try {
-    const invites = await Invite.find({
-      isUsed: false,
-      expiresAt: { $gt: new Date() }
-    })
-    .populate("tournamentId", "tournamentName")
-    .populate("teamId", "teamName")
-    .lean();
-
-    return res.status(200).json({
-      invites,
-      message: "Pending invitations fetched successfully"
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Internal server error"
-    });
-  }
-}
 
 export async function getAcceptedInvites(req: Request, res: Response) {
   try {

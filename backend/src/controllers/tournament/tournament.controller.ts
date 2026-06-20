@@ -2,11 +2,13 @@ import { Request, Response } from "express";
 
 import {
   tournamentSchema,
+  updateTournamentSchema,
   updateTournamentStatusSchema,
 } from "./tournament.schema";
 import { Tournament } from "../../models/tournament.model";
 import { User } from "../../models/user.model";
 import { validateTournamentDate } from "../../services/validateTournamentDate";
+
 import { paramsSchema } from "../../schemas/params.schema";
 import { generateToken, setTokenCookie } from "../auth/auth.controller";
 
@@ -261,6 +263,48 @@ export async function tournamentImageUpload(req: Request, res: Response){
     })
 
   } catch(error){
+    console.error(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+}
+
+export async function updateTournament(req: Request, res: Response){
+  try {
+    const result = updateTournamentSchema.safeParse(req.body);
+    const paramsResult = paramsSchema.safeParse(req.params);
+
+    if(!result.success){
+      return res.status(400).json({
+        message: "Invalid request body",
+      });
+    }
+
+    if(!paramsResult.success){
+      return res.status(400).json({
+        message: "Invalid request parameters",
+      });
+    }
+
+    const { tournamentName } = result.data;
+    const { id } = paramsResult.data;
+
+    const tournament = await Tournament.findByIdAndUpdate(id, {
+      tournamentName
+    }, {new: true, runValidators: true});
+
+    if(!tournament){
+      return res.status(404).json({
+        message: "Tournament not found",
+      });
+    }
+
+    return res.status(200).json({
+      tournament,
+      message: "Tournament updated successfully",
+    });
+  } catch (error) {
     console.error(error);
     return res.status(500).json({
       message: "Internal server error",

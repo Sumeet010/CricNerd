@@ -14,6 +14,10 @@ export const tournamentSchema = z.object({
     playingStatus: z.enum(PLAYING_STATUS).default(PLAYING_STATUS[0]).optional()
 })
 
+export const updateTournamentSchema = z.object({
+  tournamentName: z.string().min(1, { message: "Tournament name is required" }),
+});
+
 export const updateTournamentStatusSchema = z.object({
   playingStatus: z.enum(PLAYING_STATUS),
 });

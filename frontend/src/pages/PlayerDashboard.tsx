@@ -6,16 +6,12 @@ import {
   Users,
   UserRound,
   TrendingUp,
-  Settings,
-  Mail,
   Loader2,
   AlertCircle,
   Check,
   Calendar,
   Award,
-  Edit2,
-  TrendingDown,
-  Clock
+  Edit2
 } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Input } from "@/components/ui/input";
@@ -43,7 +39,6 @@ export default function PlayerDashboard() {
   const [formError, setFormError] = useState<string | null>(null);
 
   // General App Data for Player views
-  const [pendingInvites, setPendingInvites] = useState<any[]>([]);
   const [acceptedInvites, setAcceptedInvites] = useState<any[]>([]);
   const [myTournaments, setMyTournaments] = useState<any[]>([]);
   const [myTeams, setMyTeams] = useState<any[]>([]);
@@ -68,20 +63,16 @@ export default function PlayerDashboard() {
         });
 
         // 2. Fetch invitations
-        const [pendingRes, acceptedRes, matchRes, teamRes, tournamentRes] = await Promise.all([
-          inviteService.getPending(),
+        const [acceptedRes, matchRes, teamRes, tournamentRes] = await Promise.all([
           inviteService.getAccepted(),
           matchService.getAll(),
           teamService.getAll(),
           tournamentService.getAll() // Resolve names using public getAll endpoint
         ]);
 
-        const pending = pendingRes.invites ?? [];
         const accepted = acceptedRes.accepted ?? [];
         const allMatches = matchRes.allMatches ?? [];
         const allTeams = teamRes.allTeams ?? [];
-
-        setPendingInvites(pending);
         setAcceptedInvites(accepted);
 
         // Resolve teams and tournaments list
@@ -138,6 +129,9 @@ export default function PlayerDashboard() {
       if (formData.age < 12) {
         throw new Error("Age must be at least 12 years old");
       }
+      if (formData.age > 70) {
+        throw new Error("Age must be less than 70 to play a tournament");
+      }
 
       await playerService.updateMe({
         name: formData.name,
@@ -155,14 +149,7 @@ export default function PlayerDashboard() {
     }
   };
 
-  const handleAcceptInvite = async (token: string) => {
-    try {
-      await inviteService.accept(token);
-      await loadPlayerData();
-    } catch (err: any) {
-      alert(err.message || "Failed to accept invite");
-    }
-  };
+
 
   if (loading) {
     return (
@@ -214,6 +201,7 @@ export default function PlayerDashboard() {
                 onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || 0 })}
                 className="bg-[#1e1e22] border-zinc-800 text-white placeholder-zinc-600 focus-visible:border-zinc-700 focus-visible:ring-zinc-800"
                 min={12}
+                max={70}
                 required
               />
             </div>
@@ -251,21 +239,7 @@ export default function PlayerDashboard() {
         return (
           <div className="space-y-8">
             {/* Overview cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-              {/* Card: Pending Invites */}
-              <div className="rounded-xl border border-zinc-800 bg-[#1c1c1c] text-card-foreground shadow">
-                <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-                  <h3 className="tracking-tight text-sm font-medium text-zinc-400">Pending Invites</h3>
-                  <Mail className="h-4 w-4 text-zinc-500" />
-                </div>
-                <div className="p-6 pt-0">
-                  <div className="text-3xl font-extrabold text-white">{pendingInvites.length}</div>
-                  <div className="text-[10px] text-zinc-500 font-bold mt-2">
-                    Awaiting your response
-                  </div>
-                </div>
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {/* Card: Active Teams */}
               <div className="rounded-xl border border-zinc-800 bg-[#1c1c1c] text-card-foreground shadow">
                 <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
@@ -434,6 +408,8 @@ export default function PlayerDashboard() {
                       value={formData.age}
                       onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || 0 })}
                       className="bg-[#1e1e22] border-zinc-800 text-white placeholder-zinc-600 focus-visible:border-zinc-700 focus-visible:ring-zinc-800"
+                      min={12}
+                      max={70}
                       required
                     />
                   </div>
@@ -555,37 +531,7 @@ export default function PlayerDashboard() {
 
       case "invitations":
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Pending */}
-            <div className="space-y-4 bg-[#1c1c1c] border border-zinc-800 rounded-xl p-5">
-              <div>
-                <h3 className="text-white font-bold text-sm">Invitations Pending</h3>
-                <p className="text-zinc-500 text-xs">Invite links created by tournament organizers</p>
-              </div>
-
-              {pendingInvites.length === 0 ? (
-                <div className="border border-dashed border-zinc-800 rounded-xl py-12 text-center text-zinc-500 text-xs">
-                  No pending team invitations found.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {pendingInvites.map((inv) => (
-                    <div key={inv._id} className="bg-[#121214] border border-zinc-800 rounded-xl p-4 flex items-center justify-between">
-                      <div className="space-y-1">
-                        <h4 className="text-white text-xs font-bold">{inv.teamId?.teamName || "Team"}</h4>
-                        <p className="text-[10px] text-zinc-500 font-semibold">{inv.tournamentId?.tournamentName || "Tournament"}</p>
-                      </div>
-                      <button
-                        onClick={() => handleAcceptInvite(inv.token)}
-                        className="bg-[#fcf8e3] text-black font-semibold text-[10px] py-1.5 px-3.5 rounded-lg hover:bg-[#f5eea5] cursor-pointer"
-                      >
-                        Accept
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="space-y-4">
 
             {/* Accepted */}
             <div className="space-y-4 bg-[#1c1c1c] border border-zinc-800 rounded-xl p-5">
@@ -656,36 +602,6 @@ export default function PlayerDashboard() {
                   <TrendingUp className="h-4 w-4 text-green-400" />
                 </div>
                 <div className="text-3xl font-extrabold text-white">{player.highestWicketsInMatch ?? 0} <span className="text-xs text-zinc-500 font-normal">Wkts</span></div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "settings":
-        return (
-          <div className="max-w-xl bg-[#1c1c1c] border border-zinc-800 rounded-xl p-6 space-y-6">
-            <div>
-              <h3 className="text-white font-bold text-base">Player Settings</h3>
-              <p className="text-zinc-500 text-xs">Configure your notification and account preferences</p>
-            </div>
-            <div className="space-y-4 divide-y divide-zinc-800/50">
-              <div className="flex justify-between items-center py-3 first:pt-0">
-                <div>
-                  <h4 className="text-white text-xs font-semibold">Email Notifications</h4>
-                  <p className="text-zinc-500 text-[10px]">Get notified when you receive a team invitation</p>
-                </div>
-                <div className="w-9 h-5 bg-zinc-850 rounded-full p-0.5 cursor-pointer flex items-center justify-end">
-                  <span className="w-4 h-4 bg-[#fcf8e3] rounded-full" />
-                </div>
-              </div>
-              <div className="flex justify-between items-center py-3">
-                <div>
-                  <h4 className="text-white text-xs font-semibold">Profile Privacy</h4>
-                  <p className="text-zinc-500 text-[10px]">Allow organizers to search and find your playing card</p>
-                </div>
-                <div className="w-9 h-5 bg-zinc-850 rounded-full p-0.5 cursor-pointer flex items-center justify-end">
-                  <span className="w-4 h-4 bg-[#fcf8e3] rounded-full" />
-                </div>
               </div>
             </div>
           </div>
