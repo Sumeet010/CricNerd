@@ -141,7 +141,7 @@ export function Sidebar() {
       </div>
 
       {/* Search Bar */}
-      <div className="px-6 mb-6">
+      {/* <div className="px-6 mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <input 
@@ -150,7 +150,7 @@ export function Sidebar() {
             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-zinc-700"
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Navigation Links */}
       <nav className="flex-1 px-4 space-y-2 overflow-y-auto">

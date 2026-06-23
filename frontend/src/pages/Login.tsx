@@ -34,7 +34,7 @@ import { ApiError } from "@/services/api";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { useAuth } from "@/hooks/useAuth";
 
-// Define form validation schema using Zod
+
 const loginSchema = z.object({
   email: z
     .string()

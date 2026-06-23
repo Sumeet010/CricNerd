@@ -13,7 +13,6 @@ import { Match } from "../../models/match.model";
 import { Ball } from "../../models/ball.model";
 import { PlayerMatchStats } from "../../models/playerMatchStats.model";
 import { Player } from "../../models/player.model";
-import { getAccessibleTournamentIds } from "../../services/accessControl.service";
 import mongoose from "mongoose";
 import { getIO } from "../../services/socket.service";
 import { getScorecardData } from "../../services/scorecard.service";
@@ -123,9 +122,7 @@ export async function getMatches(req: Request, res: Response) {
       });
     }
     const { tournamentId } = result.data;
-    const userId = (req as any).userId;
-
-    const accessibleTournaments = await getAccessibleTournamentIds(userId);
+    const accessibleTournaments = (req as any).accessibleTournamentIds as string[];
 
     let filter: any = {};
     if (tournamentId) {
@@ -164,7 +161,6 @@ export async function getMatchById(req: Request, res: Response) {
     }
 
     const { id } = result.data;
-    const userId = (req as any).userId;
 
     const matchExist = await Match.findById(id).lean();
 
@@ -174,7 +170,7 @@ export async function getMatchById(req: Request, res: Response) {
       });
     }
 
-    const accessibleTournaments = await getAccessibleTournamentIds(userId);
+    const accessibleTournaments = (req as any).accessibleTournamentIds as string[];
     if (!accessibleTournaments.includes(matchExist.tournamentId.toString())) {
       return res.status(403).json({
         message: "Forbidden: You do not have access to this match",
@@ -314,7 +310,6 @@ export async function getScorecard(req: Request, res: Response) {
     }
 
     const { id } = result.data;
-    const userId = (req as any).userId;
 
     const match = await Match.findById(id)
       .populate("teamAId teamBId", "teamName")
@@ -326,7 +321,7 @@ export async function getScorecard(req: Request, res: Response) {
       });
     }
 
-    const accessibleTournaments = await getAccessibleTournamentIds(userId);
+    const accessibleTournaments = (req as any).accessibleTournamentIds as string[];
     if (!accessibleTournaments.includes(match.tournamentId.toString())) {
       return res.status(403).json({
         message: "Forbidden: You do not have access to this scorecard",

@@ -36,7 +36,7 @@ import { ApiError } from "@/services/api";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { useAuth } from "@/hooks/useAuth";
 
-// Define form validation schema using Zod
+
 const registerSchema = z.object({
   username: z
     .string()
@@ -151,7 +151,7 @@ export default function Register() {
         <CardHeader className="space-y-1 pt-8">
           <CardTitle className="text-2xl text-white font-bold tracking-tight">Create an account</CardTitle>
           <CardDescription className="text-zinc-400 text-xs">
-            Join the premium platform to track players, manage matches, and run tournaments
+            Join the platform to track players, manage matches, and run tournaments
           </CardDescription>
         </CardHeader>
 

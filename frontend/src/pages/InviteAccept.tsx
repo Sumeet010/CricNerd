@@ -244,7 +244,7 @@ export default function InviteAccept() {
         </p>
         {inviteDetails?.expiresAt && (
           <span className="inline-block mt-3 text-[10px] bg-zinc-900 border border-zinc-850 px-2.5 py-1 rounded-full text-zinc-500 font-bold uppercase tracking-wider">
-            Expires: {new Date(inviteDetails.expiresAt).toLocaleDateString()}
+            Invitation expires on: {new Date(inviteDetails.expiresAt).toLocaleDateString()}
           </span>
         )}
       </div>

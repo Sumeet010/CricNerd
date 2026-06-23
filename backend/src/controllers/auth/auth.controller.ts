@@ -13,13 +13,15 @@ export function generateToken(userId: string, role: string[]) {
 }
 
 export function setTokenCookie(res: Response, token: string) {
+  const isProduction = process.env.NODE_ENV === "production";
   res.cookie("token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 }
+
 
 // POST /auth/register
 export async function registerHandler(req: Request, res: Response) {

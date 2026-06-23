@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import logo from "@/assets/logo.png";
 
 interface AuthLayoutProps {
   children: ReactNode;
-  maxWidthClassName?: string; // e.g. "max-w-md" (Login) or "max-w-lg" (Register)
+  maxWidthClassName?: string; 
 }
 
 export function AuthLayout({ children, maxWidthClassName = "max-w-md" }: AuthLayoutProps) {
@@ -13,9 +14,12 @@ export function AuthLayout({ children, maxWidthClassName = "max-w-md" }: AuthLay
 
       <div className={`w-full ${maxWidthClassName} flex flex-col gap-6 relative z-10`}>
         {/* Brand header */}
-        <div className="flex items-center justify-center gap-1.5">
-          <span className="text-3xl font-extrabold text-white tracking-tight">Cricnerd</span>
-          <span className="w-2 h-2 rounded-full bg-[#fcf8e3]" />
+        <div className="flex items-center justify-center">
+          <img
+            src={logo}
+            alt="Cricnerd"
+            className="h-30 w-auto object-contain"
+          />
         </div>
         
         {/* Auth page content */}

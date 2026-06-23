@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import  logo from "../assets/logo.png"
 import {
   Trophy,
   Swords,
@@ -47,9 +48,9 @@ function Navbar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-xl">🏏</span>
+        <img src={logo} alt="Cricnerd Logo" className="h-6 w-auto" />
         <span
-          style={{ fontFamily: "'Syne', sans-serif", fontSize: "0.95rem", fontWeight: 800, letterSpacing: "-0.03em" }}
+          style={{ fontFamily: "'Syne', sans-serif", fontSize: "0.95rem", fontWeight: 800, letterSpacing: "-0.08em" }}
           className="text-zinc-900"
         >
           Cricnerd
@@ -103,16 +104,16 @@ function Hero() {
     <section className="bg-[#fefdf7] min-h-[92vh] flex items-center justify-center px-[6vw] pt-28 pb-20">
       <div className="max-w-5xl w-full flex flex-col items-center text-center">
 
-        {/* Badge */}
+        {/* Badge
         <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-semibold uppercase tracking-widest
                          text-zinc-500 bg-[#f5f2de] border border-[#e2dcb8] px-3 py-1 rounded-full mb-8">
           <Star className="w-3 h-3" /> Cricket Management Platform
-        </span>
+        </span> */}
 
         {/* Headline — line 1 normal, line 2 italic + accent, forced to 2 lines */}
         <h1 className="text-[clamp(3.2rem,6.5vw,5.6rem)] font-extrabold leading-[1.06] tracking-tight text-zinc-900 mb-6">
           Organise tournaments<br />
-          <span className="italic text-[#3a6b35]">they'll never forget.</span>
+          <span className="italic text-[#d2fc00]">they'll never forget.</span>
         </h1>
 
         {/* Subtitle */}
@@ -149,48 +150,157 @@ function Hero() {
 /* ─────────────────────────────────────────────
    FEATURES
 ───────────────────────────────────────────── */
-const features = [
-  { icon: <Trophy className="w-5 h-5" />, title: "Tournament Management", desc: "Create and manage full cricket tournaments with custom formats, brackets, and schedules." },
-  { icon: <Swords className="w-5 h-5" />, title: "Live Scoring", desc: "Ball-by-ball live scoring with real-time updates for every match in your tournament." },
-  { icon: <Users className="w-5 h-5" />, title: "Team & Squad Builder", desc: "Build squads, assign players to teams and tournaments, and manage your playing XI." },
-  { icon: <BarChart3 className="w-5 h-5" />, title: "Stats & Scorecards", desc: "Detailed scorecards, batting and bowling stats after every match — automatically." },
-  { icon: <Zap className="w-5 h-5" />, title: "Instant Results", desc: "Share match results instantly. Spectators get the full picture in seconds." },
-  { icon: <Shield className="w-5 h-5" />, title: "Role-Based Access", desc: "Organisers manage everything; players track their own stats. Secure by design." },
-];
-
 function Features() {
-  return (
-    <section id="features" className="py-24 px-[8vw]">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-14">
-          <span className="inline-block text-[0.7rem] font-semibold uppercase tracking-widest text-[#a0a8b8]
-                           bg-white/10 border border-white/15 px-3 py-1 rounded-full mb-4">
-            Features
-          </span>
-          <h2 className="text-[clamp(1.8rem,3vw,2.6rem)] font-extrabold tracking-tight text-white mb-3">
-            Everything you need to run cricket
-          </h2>
-          <p className="text-[#8892a4] leading-relaxed max-w-md mx-auto">
-            From player registration to the final scorecard — Cricnerd handles it all.
-          </p>
-        </div>
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {features.map((f, i) => (
-            <div
-              key={i}
-              className="bg-white/5 border border-white/10 rounded-2xl p-7
-                         hover:-translate-y-1 hover:bg-white/8 hover:border-white/20 transition-all duration-200"
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const totalHeight = rect.height - viewportHeight;
+      if (totalHeight <= 0) return;
+      
+      const scrolled = -rect.top;
+      const progress = Math.min(Math.max(scrolled / totalHeight, 0), 1);
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Text parallax/scale calculations (first 30% of scroll)
+  const textProgress = Math.min(scrollProgress / 0.3, 1);
+  const textScale = 1.3 - textProgress * 0.3; // Scales down from 1.3 to 1.0
+  const textTranslateX = isMobile ? 0 : (1 - textProgress) * 24; // Translates left
+
+  // Active word states based on scroll position
+  const isOrgActive = scrollProgress < 0.35;
+  const isPlayActive = scrollProgress >= 0.35 && scrollProgress < 0.68;
+  const isFansActive = scrollProgress >= 0.68;
+
+  // Organizer Image Scroll calculations
+  // Centered at progress = 0.2
+  const orgTranslateY = (0.2 - scrollProgress) * 800;
+  const orgOpacity = Math.min(Math.max((scrollProgress - 0.02) / 0.12, 0), 1) * 
+                     Math.min(Math.max((0.38 - scrollProgress) / 0.12, 0), 1);
+
+  // Player Image Scroll calculations
+  // Centered at progress = 0.52
+  const playTranslateY = (0.52 - scrollProgress) * 800;
+  const playOpacity = Math.min(Math.max((scrollProgress - 0.36) / 0.12, 0), 1) * 
+                      Math.min(Math.max((0.7 - scrollProgress) / 0.12, 0), 1);
+
+  // Fans Image Scroll calculations
+  // Centered at progress = 0.85
+  const fansTranslateY = (0.85 - scrollProgress) * 800;
+  const fansOpacity = Math.min(Math.max((scrollProgress - 0.68) / 0.12, 0), 1) * 
+                      Math.min(Math.max((0.98 - scrollProgress) / 0.1, 0), 1);
+
+  return (
+    <section ref={containerRef} className="relative h-[320vh] w-full" id="features">
+      {/* Sticky viewport wrapper */}
+      <div className="sticky top-0 h-screen w-full flex items-center overflow-hidden px-6 sm:px-12 md:px-16 lg:px-24">
+        <div className="w-full max-w-7xl mx-auto flex flex-col md:grid md:grid-cols-12 gap-8 md:gap-12 items-center justify-center">
+          
+          {/* Left Column: Heading */}
+          <div 
+            className="col-span-12 md:col-span-5 flex items-center md:items-start justify-center md:justify-start text-center md:text-left z-10 transition-transform duration-75 ease-out"
+            style={{
+              transform: `translateX(${textTranslateX}vw) scale(${textScale})`,
+              transformOrigin: isMobile ? "center" : "left center",
+            }}
+          >
+            <h2 
+              className="text-[#d2fc00] text-[clamp(2.2rem,4.5vw,3.6rem)] font-extrabold leading-[1.08] tracking-tight flex flex-col gap-1 md:gap-2"
+              style={{ fontFamily: "'Syne', sans-serif" }}
             >
-              <div className="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center text-white mb-4">
-                {f.icon}
+              <span>For the</span>
+              <span className={`transition-all duration-300 ${isOrgActive ? "font-extrabold not-italic text-[#d2fc00]" : "font-normal italic text-[#d2fc00]/45"}`}>
+                organizers
+              </span>
+              <span className={`transition-all duration-300 ${isPlayActive ? "font-extrabold not-italic text-[#d2fc00]" : "font-normal italic text-[#d2fc00]/45"}`}>
+                players
+              </span>
+              <span className="flex items-center gap-2 justify-center md:justify-start">
+                <span className="text-[#d2fc00]/45 font-normal">and</span>
+                <span className={`transition-all duration-300 ${isFansActive ? "font-extrabold not-italic text-[#d2fc00]" : "font-normal italic text-[#d2fc00]/45"}`}>
+                  fans
+                </span>
+              </span>
+            </h2>
+          </div>
+
+          {/* Right Column: Images */}
+          <div className="col-span-12 md:col-span-7 flex items-center justify-center relative w-full h-[280px] sm:h-[340px] md:h-[480px]">
+            {/* Organizer Image */}
+            <div 
+              className="absolute inset-0 flex items-center justify-center transition-all duration-75"
+              style={{
+                opacity: orgOpacity,
+                transform: `translateY(${orgTranslateY}px)`,
+                pointerEvents: isOrgActive ? "auto" : "none",
+              }}
+            >
+              <div className="w-[220px] sm:w-[270px] md:w-[360px] aspect-[4/5] rounded-[2.2rem] md:rounded-[2.8rem] overflow-hidden bg-zinc-900 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <img 
+                  src="/organzier.jpg" 
+                  alt="Organizer" 
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <h3 className="text-[0.95rem] font-bold text-white mb-2">{f.title}</h3>
-              <p className="text-[0.87rem] text-[#8892a4] leading-relaxed">{f.desc}</p>
             </div>
-          ))}
+
+            {/* Player Image */}
+            <div 
+              className="absolute inset-0 flex items-center justify-center transition-all duration-75"
+              style={{
+                opacity: playOpacity,
+                transform: `translateY(${playTranslateY}px)`,
+                pointerEvents: isPlayActive ? "auto" : "none",
+              }}
+            >
+              <div className="w-[220px] sm:w-[270px] md:w-[360px] aspect-[4/5] rounded-[2.2rem] md:rounded-[2.8rem] overflow-hidden bg-zinc-900 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <img 
+                  src="/player.jpg" 
+                  alt="Player" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            {/* Fans Image */}
+            <div 
+              className="absolute inset-0 flex items-center justify-center transition-all duration-75"
+              style={{
+                opacity: fansOpacity,
+                transform: `translateY(${fansTranslateY}px)`,
+                pointerEvents: isFansActive ? "auto" : "none",
+              }}
+            >
+              <div className="w-[220px] sm:w-[270px] md:w-[360px] aspect-[4/5] rounded-[2.2rem] md:rounded-[2.8rem] overflow-hidden bg-zinc-900 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <img 
+                  src="/fans.jpg" 
+                  alt="Fans" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -213,10 +323,6 @@ function HowItWorks() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-14">
-          <span className="inline-block text-[0.7rem] font-semibold uppercase tracking-widest text-[#a0a8b8]
-                           bg-white/10 border border-white/15 px-3 py-1 rounded-full mb-4">
-            How it works
-          </span>
           <h2 className="text-[clamp(1.8rem,3vw,2.6rem)] font-extrabold tracking-tight text-white mb-3">
             Up and running in minutes
           </h2>
@@ -249,71 +355,87 @@ function HowItWorks() {
 }
 
 /* ─────────────────────────────────────────────
-   INFO
+   BENTO GRID (FEATURES)
 ───────────────────────────────────────────── */
-const infoPoints = [
-  "Free to use — no hidden charges",
-  "Works for gully cricket to inter-club leagues",
-  "Role-based accounts for organisers & players",
-  "Clean scorecards shareable after every match",
-  "Ball-by-ball live scoring built in",
-  "Supports 5-over, 6-over & 20-over formats",
-];
+function Bento() {
+  const cards = [
+    {
+      title: "Team & player management",
+      desc: "Centralize all team and player information in one secure, collaborative workspace. Easily manage rosters, statistics, and profiles.",
+      img: "/dashboard_bento.png",
+      span: "col-span-12 md:col-span-6",
+      aspect: "aspect-[1.35]",
+    },
+    {
+      title: "Ball-by-ball tracking",
+      desc: "Record every run, wicket, and extra with an intuitive real-time scorer page, instantly updating the public scorecards.",
+      img: "/ball by ball tracking.png",
+      span: "col-span-12 md:col-span-6",
+      aspect: "aspect-[1.35]",
+    },
+    {
+      title: "Tournament setup",
+      desc: "Create and configure tournaments of different match formats (5, 6, or 20 overs), set dates, and invite teams automatically.",
+      img: "/Tournament_img_bento.png",
+      span: "col-span-12 md:col-span-4",
+      aspect: "aspect-[1.1]",
+    },
+    {
+      title: "Track active matches",
+      desc: "Monitor ongoing match statuses, live streams, and results at a glance in a responsive scorecard list.",
+      img: "/Track_active_match_bento.png",
+      span: "col-span-12 md:col-span-4",
+      aspect: "aspect-[1.1]",
+    },
+    {
+      title: "Invitation system",
+      desc: "Onboard new teams and players using shareable secure invitation tokens to join tournaments, eliminating manual entry.",
+      img: "/invitation_system_bento.png",
+      span: "col-span-12 md:col-span-4",
+      aspect: "aspect-[1.1]",
+    },
+  ];
 
-function Info() {
   return (
-    <section id="info" className="py-24 px-[8vw]">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-        {/* Left text */}
-        <div>
-          <span className="inline-block text-[0.7rem] font-semibold uppercase tracking-widest text-[#a0a8b8]
-                           bg-white/10 border border-white/15 px-3 py-1 rounded-full mb-4">
-            Why Cricnerd
-          </span>
-          <h2 className="text-[clamp(1.8rem,3vw,2.4rem)] font-extrabold tracking-tight text-white leading-tight mb-4">
-            Built for cricket lovers,<br />by cricket lovers
+    <section id="bento-features" className="py-24 px-6 sm:px-[8vw]">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-[clamp(1.8rem,3vw,2.5rem)] font-extrabold tracking-tight text-[#d2fc00] mb-4 leading-tight">
+            Designed for cricket enthusiasts
           </h2>
-          <p className="text-[#8892a4] leading-relaxed mb-7">
-            We know how hard it is to manage a cricket tournament with WhatsApp groups
-            and paper scorecards. Cricnerd was built to solve exactly that.
+          <p className="text-[#8892a4] leading-relaxed max-w-xl mx-auto text-sm sm:text-base">
+            Everything you need to orchestrate tournaments, manage player profiles, and track live scores in one clean, unified platform.
           </p>
-
-          <ul className="flex flex-col gap-2.5 mb-8">
-            {infoPoints.map((pt, i) => (
-              <li key={i} className="flex items-center gap-2.5 text-[0.88rem] text-[#a0a8b8]">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                {pt}
-              </li>
-            ))}
-          </ul>
-
-          <Link
-            to="/register"
-            className="inline-flex items-center gap-1.5 bg-white text-zinc-900 text-[0.9rem]
-                       font-semibold px-6 py-3 rounded-full hover:bg-zinc-100 transition-all
-                       hover:-translate-y-0.5"
-          >
-            Start for free <ChevronRight className="w-4 h-4" />
-          </Link>
         </div>
 
-        {/* Right stats card */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-10">
-          <div className="grid grid-cols-2 gap-8">
-            {[
-              { val: "100%", label: "Free to use" },
-              { val: "3", label: "Match formats" },
-              { val: "∞", label: "Tournaments" },
-              { val: "Live", label: "Score updates" },
-            ].map((s, i) => (
-              <div key={i} className="flex flex-col gap-1">
-                <span className="text-[2.4rem] font-extrabold tracking-tighter text-white leading-none">
-                  {s.val}
-                </span>
-                <span className="text-[0.8rem] text-[#8892a4] font-medium">{s.label}</span>
+        {/* Bento Grid */}
+        <div className="grid grid-cols-12 gap-6 md:gap-8">
+          {cards.map((c, i) => (
+            <div
+              key={i}
+              className={`${c.span} group bg-[#0b0e17] border border-white/5 rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.4)]`}
+            >
+              {/* Graphic/Image Container */}
+              <div className={`relative w-full ${c.aspect} rounded-2xl overflow-hidden bg-black/10 flex items-center justify-center p-2 mb-6 sm:mb-8`}>
+                <img
+                  src={c.img}
+                  alt={c.title}
+                  className="w-full h-full object-contain transition-transform duration-300 ease-out group-hover:rotate-[2deg]"
+                />
               </div>
-            ))}
-          </div>
+
+              {/* Text Content */}
+              <div className="flex flex-col gap-2 mt-auto">
+                <h3 className="text-[#d2fc00] text-lg sm:text-xl font-bold tracking-tight">
+                  {c.title}
+                </h3>
+                <p className="text-[#8892a4] text-xs sm:text-sm leading-relaxed">
+                  {c.desc}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -328,7 +450,7 @@ function Footer() {
     <footer className="bg-[#fefdf7] border-t border-[#e2dcb8] py-8 px-[8vw]">
       <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-6">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🏏</span>
+          <img src={logo} alt="Cricnerd Logo" className="h-6 w-auto" />
           <span
             style={{ fontFamily: "'Syne', sans-serif", fontSize: "1.05rem", fontWeight: 700, letterSpacing: "-0.04em" }}
             className="text-zinc-900"
@@ -363,17 +485,17 @@ export default function Landing() {
       <Navbar />
       <Hero />
 
-      {/* Dark feature block — rounded top at start, rounded bottom before footer */}
+      {/* Dark feature block — full screen width, no margins, rounded top corners */}
       <div
-        className="mx-4 sm:mx-6 lg:mx-10"
         style={{
           background: "#07090f",
-          borderRadius: "2.5rem",
+          borderTopLeftRadius: "5rem",
+          borderTopRightRadius: "5rem",
         }}
       >
         <Features />
-        <HowItWorks />
-        <Info />
+
+        <Bento />
       </div>
 
       <Footer />

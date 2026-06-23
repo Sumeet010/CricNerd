@@ -4,6 +4,7 @@ import { authMiddleware } from "../middleware/auth.middleware";
 import { requireRole } from "../middleware/requireRole.middleware";
 import { requireTournamentOwnership } from "../middleware/requireTournamentOwnership.middleware";
 import { requireMatchOwnership } from "../middleware/requireMatchOwnership.middleware";
+import { attachAccessibleTournaments } from "../middleware/attachAccessibleTournaments.middleware";
 
 export const matchRouter =  express.Router();
 
@@ -45,7 +46,7 @@ export const matchRouter =  express.Router();
  *       500:
  *         description: Internal server error
  */
-matchRouter.post('/add', authMiddleware, authMiddleware,requireRole(["ORGANIZER"]),requireTournamentOwnership, createMatch)
+matchRouter.post('/add', authMiddleware, requireRole(["ORGANIZER"]), requireTournamentOwnership, createMatch)
 
 /**
  * @swagger
@@ -79,7 +80,7 @@ matchRouter.post('/add', authMiddleware, authMiddleware,requireRole(["ORGANIZER"
  *       500:
  *         description: Internal server error
  */
-matchRouter.get('/get-matches', authMiddleware, getMatches)
+matchRouter.get('/get-matches', authMiddleware, attachAccessibleTournaments, getMatches)
 
 /**
  * @swagger
@@ -97,7 +98,7 @@ matchRouter.get('/get-matches', authMiddleware, getMatches)
  *       200:
  *         description: Match fetched
  */
-matchRouter.get('/get-match/:id', authMiddleware, getMatchById)
+matchRouter.get('/get-match/:id', authMiddleware, attachAccessibleTournaments, getMatchById)
 
 /**
  * @swagger
@@ -260,7 +261,7 @@ matchRouter.patch('/:id/update-match-status', authMiddleware,requireRole(["ORGAN
  *       500:
  *         description: Internal server error
  */
-matchRouter.get('/:id/get-scorecard', authMiddleware, getScorecard)
+matchRouter.get('/:id/get-scorecard', authMiddleware, attachAccessibleTournaments, getScorecard)
 
 /**
  * @swagger
