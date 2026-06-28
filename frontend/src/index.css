@@ -130,3 +130,50 @@
     @apply font-sans;
   }
 }
+
+/* ─────────────────────────────────────────────
+   HERO ENTRANCE ANIMATIONS
+───────────────────────────────────────────── */
+@keyframes revealUp {
+  0% {
+    opacity: 0;
+    transform: translateY(110%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-reveal-up {
+  opacity: 0;
+  animation: revealUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-slide-up {
+  opacity: 0;
+  animation: fadeSlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.delay-150 {
+  animation-delay: 550ms;
+}
+
+.delay-300 {
+  animation-delay: 700ms;
+}
+
+.delay-450 {
+  animation-delay: 1000ms;
+}
