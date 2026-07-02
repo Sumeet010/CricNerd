@@ -10,7 +10,7 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: "http://localhost:3000",
+        url: process.env.BACKEND_URL || "http://localhost:3000",
       },
     ],
   },

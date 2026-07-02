@@ -2,11 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { Team } from "../models/team.model";
 import { Tournament } from "../models/tournament.model";
 
-export async function requireTeamOwnership(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export async function requireTeamOwnership(req: Request, res: Response, next: NextFunction) {
   try {
     const teamId = req.params.id || req.body.teamId;
 
@@ -32,10 +28,7 @@ export async function requireTeamOwnership(
       });
     }
 
-    if (
-      tournament.organizerId.toString() !==
-      (req as any).userId
-    ) {
+    if (tournament.organizerId.toString() !== (req as any).userId) {
       return res.status(403).json({
         message: "Forbidden",
       });

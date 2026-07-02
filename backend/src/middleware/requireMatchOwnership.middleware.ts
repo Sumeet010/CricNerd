@@ -2,11 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { Match } from "../models/match.model";
 import { Tournament } from "../models/tournament.model";
 
-export async function requireMatchOwnership(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function requireMatchOwnership(req: Request, res: Response, next: NextFunction) {
   try {
     const matchId = req.params.id || req.body.matchId;
 
@@ -18,9 +14,7 @@ export async function requireMatchOwnership(
       });
     }
 
-    const tournament = await Tournament.findById(
-      match.tournamentId
-    );
+    const tournament = await Tournament.findById(match.tournamentId);
 
     if (!tournament) {
       return res.status(404).json({
@@ -28,10 +22,7 @@ export async function requireMatchOwnership(
       });
     }
 
-    if (
-      tournament.organizerId.toString() !==
-      (req as any).userId
-    ) {
+    if (tournament.organizerId.toString() !== (req as any).userId){
       return res.status(403).json({
         message: "Forbidden",
       });

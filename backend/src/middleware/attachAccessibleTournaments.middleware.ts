@@ -6,7 +6,7 @@ import { PlayerTeamTournament } from "../models/playerTeamTournament.model";
 
 // next time use CASL!!
 export async function attachAccessibleTournaments(req: Request, res: Response, next: NextFunction) {
-  
+
   try {
     const userId = (req as any).userId;
 
