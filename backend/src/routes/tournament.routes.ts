@@ -1,7 +1,6 @@
 import express from "express"
 
-import { addTournament, deleteTournament, getTournamentById, getTournaments, myTournaments, updateTournamentStatus, tournamentImageUpload, updateTournament} from "../controllers/tournament/tournament.controller";
-import { uploadFile } from "../middleware/fileUpload.middleware";
+import { addTournament, deleteTournament, getTournamentById, getTournaments, myTournaments, updateTournamentStatus, updateTournament} from "../controllers/tournament/tournament.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { requireTournamentOwnership } from "../middleware/requireTournamentOwnership.middleware"
 import { requireRole } from "../middleware/requireRole.middleware";
@@ -17,5 +16,4 @@ tournamentRouter.delete('/delete/:id', authMiddleware, requireRole(["ORGANIZER"]
 tournamentRouter.patch('/:id/update-tournament-format', authMiddleware, requireRole(["ORGANIZER"]), requireTournamentOwnership, updateTournamentStatus)
 tournamentRouter.put('/:id', authMiddleware, requireRole(["ORGANIZER"]), requireTournamentOwnership, updateTournament);
 tournamentRouter.get('/my', authMiddleware, requireRole(["ORGANIZER"]), myTournaments);
-tournamentRouter.post('/:id/upload-image', uploadFile.single('image'), authMiddleware, requireRole(["ORGANIZER"]), requireTournamentOwnership, tournamentImageUpload);
 // tournamentRouter.get('/my-participated-tournaments', authMiddleware, requireRole(["PLAYER"]), myTournaments);
