@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   Trophy,
   Swords,
@@ -17,7 +17,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { playerService, inviteService, tournamentService, matchService, teamService } from "@/services";
-import type { Player, Tournament, Team, Match } from "@/types";
+import type { Player, Match } from "@/types";
 
 export default function PlayerDashboard() {
   const [searchParams] = useSearchParams();

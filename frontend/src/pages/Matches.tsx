@@ -21,7 +21,6 @@ import type {
   Tournament,
   Team,
   CreateMatchRequest,
-  PlayingFormat,
 } from "@/types";
 
 /* ─── helpers ─── */

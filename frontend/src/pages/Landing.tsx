@@ -1,19 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
-import { FakeTournamentSetup } from "@/components/fake/FakeTournamentSetup";
-import {
-  Trophy,
-  Swords,
-  Users,
-  BarChart3,
-  CheckCircle2,
-  ChevronRight,
-  Star,
-  Zap,
-  Shield,
-  ArrowUpRight,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 /* ─────────────────────────────────────────────
    NAVBAR
@@ -38,7 +26,7 @@ function Navbar() {
   }, []);
 
   const navItems = [
-    { id: "features", label: "Features" },
+    { id: "features", label: "About" },
     { id: "how-it-works", label: "How it works" },
     { id: "info", label: "Info" },
   ]
@@ -315,103 +303,7 @@ function Features() {
    HOW IT WORKS (INTERACTIVE STEPS)
 ───────────────────────────────────────────── */
 
-
-const scoreApiStr = `{
-  "matchId": "m_9281",
-  "status": "LIVE",
-  "score": {
-    "runs": 142,
-    "wickets": 3,
-    "overs": 18.4,
-    "runRate": 7.61
-  },
-  "batsmen": [
-    { "name": "A. Finch", "runs": 54, "balls": 32 },
-    { "name": "S. Smith", "runs": 12, "balls": 8 }
-  ]
-}`;
-
 function HowItWorks() {
-  const [step2Tab, setStep2Tab] = useState("Invite Link");
-  const [step3Tab, setStep3Tab] = useState("Interactive Scorer");
-
-  // Step 3 Interactive Scorer State
-  const [score, setScore] = useState({
-    runs: 142,
-    wickets: 3,
-    overs: 18,
-    balls: 4,
-    batsmen: [
-      { name: "A. Finch", runs: 54, balls: 32 },
-      { name: "S. Smith", runs: 12, balls: 8 }
-    ],
-    bowler: { name: "M. Starc", overs: 3, balls: 4, maidens: 0, runs: 28, wickets: 1 }
-  });
-
-  const handleScoreEvent = (event: "dot" | "1" | "4" | "6" | "wicket") => {
-    setScore(prev => {
-      let nextRuns = prev.runs;
-      let nextWickets = prev.wickets;
-      let nextBalls = prev.balls + 1;
-      let nextOvers = prev.overs;
-
-      // Handle runs & wickets
-      if (event === "1") nextRuns += 1;
-      else if (event === "4") nextRuns += 4;
-      else if (event === "6") nextRuns += 6;
-      else if (event === "wicket") {
-        nextWickets = Math.min(prev.wickets + 1, 10);
-      }
-
-      // Handle overs progression
-      if (nextBalls >= 6) {
-        nextOvers += 1;
-        nextBalls = 0;
-      }
-
-      // Update current batsman's stats (Finch is on strike)
-      const nextBatsmen = [...prev.batsmen];
-      if (event !== "wicket" || nextWickets < 10) {
-        let runsScored = 0;
-        if (event === "1") runsScored = 1;
-        else if (event === "4") runsScored = 4;
-        else if (event === "6") runsScored = 6;
-
-        nextBatsmen[0] = {
-          ...nextBatsmen[0],
-          runs: nextBatsmen[0].runs + runsScored,
-          balls: nextBatsmen[0].balls + 1
-        };
-      }
-
-      // Update bowler's stats
-      const nextBowler = {
-        ...prev.bowler,
-        balls: nextBalls,
-        overs: nextOvers,
-        runs: prev.bowler.runs + (event === "1" ? 1 : event === "4" ? 4 : event === "6" ? 6 : 0),
-        wickets: event === "wicket" ? prev.bowler.wickets + 1 : prev.bowler.wickets
-      };
-
-      return {
-        ...prev,
-        runs: nextRuns,
-        wickets: nextWickets,
-        overs: nextOvers,
-        balls: nextBalls,
-        batsmen: nextBatsmen,
-        bowler: nextBowler
-      };
-    });
-  };
-
-  const [copiedText, setCopiedText] = useState("");
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedText(text);
-    setTimeout(() => setCopiedText(""), 2000);
-  };
-
   return (
     <section id="how-it-works" className="py-24 px-6 sm:px-[8vw] bg-[#07090f]">
       <div className="max-w-6xl mx-auto flex flex-col gap-10">
@@ -431,12 +323,11 @@ function HowItWorks() {
           {/* Left Column (Lime Green) */}
           <div className="col-span-12 lg:col-span-5 bg-[#d2fc00] p-8 sm:p-10 flex flex-col justify-between text-zinc-950">
             <div>
-            
               <h2 className="text-2xl sm:text-3xl font-black mt-4 leading-tight">
                 Complete Tournament Management
               </h2>
               <p className="text-xs sm:text-sm font-medium mt-1 text-zinc-700">
-                Zero to Live-Scoring in 60 seconds 🚀
+        
               </p>
             </div>
             
@@ -444,14 +335,20 @@ function HowItWorks() {
               <span className="text-xs font-bold uppercase tracking-widest text-zinc-600 block mb-1">Step 01</span>
               <h3 className="text-xl sm:text-2xl font-black mb-2">Create & Configure</h3>
               <p className="text-xs sm:text-sm font-medium leading-relaxed text-zinc-800">
-                Create leagues, choose match formats (5, 6, 20 overs), set dates Our platform accommodates any custom rules you require.
+                Create leagues, choose match formats (5, 6, 20 overs), set dates. 
               </p>
             </div>
           </div>
 
-          {/* Right Column (Tournament Setup Preview) */}
+          {/* Right Column (Tournament Setup Preview Image) */}
           <div className="col-span-12 lg:col-span-7 flex items-center justify-center bg-[#07090f] p-6 sm:p-10">
-            <FakeTournamentSetup />
+            <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-zinc-950/40 border border-zinc-850 flex items-center justify-center p-4">
+              <img
+                src="/Tournament_img_bento.png"
+                alt="Tournament Setup"
+                className="w-full h-full object-contain hover:scale-[1.02] transition-transform duration-300 ease-out"
+              />
+            </div>
           </div>
         </div>
 
@@ -459,95 +356,25 @@ function HowItWorks() {
         <div className="grid grid-cols-1 lg:grid-cols-12 rounded-[2rem] border border-zinc-800 bg-[#0b0e17] overflow-hidden min-h-[480px] transition-all duration-300 hover:border-zinc-700">
           {/* Left Column (Lime Green) */}
           <div className="col-span-12 lg:col-span-5 bg-[#d2fc00] p-8 sm:p-10 flex flex-col justify-between text-zinc-950">
-            {/* Spacer top to align with Card 1 */}
             <div className="hidden lg:block"></div>
             
             <div className="mt-12 lg:mt-0">
               <span className="text-xs font-bold uppercase tracking-widest text-zinc-600 block mb-1">Step 02</span>
-              <h3 className="text-xl sm:text-2xl font-black mb-2">Invite Teams & Players</h3>
+              <h3 className="text-xl sm:text-2xl font-black mb-2">Invite Players </h3>
               <p className="text-xs sm:text-sm font-medium leading-relaxed text-zinc-800">
-                Generate secure joining tokens. Captains use these tokens to register and manage their own team rosters directly, taking the administrative burden off your shoulders.
+                Generate secure joining tokens. Organizers can share these invitation links with players to register, taking the administrative burden off the players.
               </p>
             </div>
           </div>
 
-          {/* Right Column (Dark UI Console) */}
-          <div className="col-span-12 lg:col-span-7 flex flex-col bg-[#07090f]">
-            {/* Header Tabs */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/80 bg-zinc-950/20">
-              <div className="flex gap-2">
-                {["Invite Link", "Captains List"].map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setStep2Tab(tab)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      step2Tab === tab ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => handleCopy(step2Tab === "Invite Link" ? "https://cricnerd.com/join/cpl-2026?token=s8f2n9x2" : "Titans CC: John Doe, Knights XI: Sarah Smith")}
-                className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-white transition-colors px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-850"
-              >
-                <span>{copiedText !== "" ? "Copied!" : "Copy Link"}</span>
-              </button>
-            </div>
-
-            {/* Display Roster Mockup */}
-            <div className="p-6 sm:p-8 flex-1 flex flex-col justify-center bg-zinc-950/40">
-              {step2Tab === "Invite Link" ? (
-                <div className="flex flex-col gap-5 max-w-md mx-auto w-full">
-                  <div className="bg-zinc-900 border border-zinc-850 p-4 rounded-xl flex items-center justify-between">
-                    <span className="text-zinc-300 font-mono text-xs overflow-hidden text-ellipsis whitespace-nowrap mr-2">
-                      https://cricnerd.com/join/cpl-2026?token=s8f2n9x2
-                    </span>
-                    <button 
-                      onClick={() => handleCopy("https://cricnerd.com/join/cpl-2026?token=s8f2n9x2")}
-                      className="px-3 py-1.5 text-[10px] bg-[#d2fc00] text-zinc-950 rounded-lg font-bold hover:bg-[#b8dd00] transition-colors"
-                    >
-                      Copy
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">TEAM REGISTRATION STATUS</span>
-                    {[
-                      { name: "Titans CC", status: "Joined", players: "15 Players", color: "text-[#d2fc00]" },
-                      { name: "Knights XI", status: "Joined", players: "14 Players", color: "text-[#d2fc00]" },
-                      { name: "Warriors SC", status: "Pending Action", players: "0 Players", color: "text-zinc-500" }
-                    ].map((team, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-xs py-2 border-b border-zinc-850">
-                        <span className="text-white font-bold">{team.name}</span>
-                        <div className="flex gap-3">
-                          <span className="text-zinc-400 font-medium">{team.players}</span>
-                          <span className={`font-semibold ${team.color}`}>{team.status}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3.5 max-w-md mx-auto w-full">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">REGISTERED CAPTAINS</span>
-                  {[
-                    { captain: "John Doe", team: "Titans CC", email: "john@titanscc.com" },
-                    { captain: "Sarah Smith", team: "Knights XI", email: "sarah@knightsxi.com" },
-                    { captain: "Dave Miller", team: "Warriors SC", email: "dave@warriors.com" }
-                  ].map((cap, idx) => (
-                    <div key={idx} className="bg-zinc-900/60 border border-zinc-850 p-3 rounded-xl flex justify-between items-center">
-                      <div>
-                        <div className="text-white font-bold text-sm">{cap.captain}</div>
-                        <div className="text-zinc-500 text-xs">{cap.email}</div>
-                      </div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#d2fc00] border border-[#d2fc00]/25 px-2.5 py-0.5 rounded-full bg-[#d2fc00]/5">
-                        {cap.team}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+          {/* Right Column (Invite/Roster Image) */}
+          <div className="col-span-12 lg:col-span-7 flex items-center justify-center bg-[#07090f] p-6 sm:p-10">
+            <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-zinc-950/40 border border-zinc-850 flex items-center justify-center p-4">
+              <img
+                src="/invitation_system_bento.png"
+                alt="Invite Teams and Players"
+                className="w-full h-full object-contain hover:scale-[1.02] transition-transform duration-300 ease-out"
+              />
             </div>
           </div>
         </div>
@@ -556,107 +383,25 @@ function HowItWorks() {
         <div className="grid grid-cols-1 lg:grid-cols-12 rounded-[2rem] border border-zinc-800 bg-[#0b0e17] overflow-hidden min-h-[480px] transition-all duration-300 hover:border-zinc-700">
           {/* Left Column (Lime Green) */}
           <div className="col-span-12 lg:col-span-5 bg-[#d2fc00] p-8 sm:p-10 flex flex-col justify-between text-zinc-950">
-            {/* Spacer top to align with Card 1 */}
             <div className="hidden lg:block"></div>
             
             <div className="mt-12 lg:mt-0">
               <span className="text-xs font-bold uppercase tracking-widest text-zinc-600 block mb-1">Step 03</span>
-              <h3 className="text-xl sm:text-2xl font-black mb-2">Score & Stream Live</h3>
+              <h3 className="text-xl sm:text-2xl font-black mb-2">Score & Watch Live</h3>
               <p className="text-xs sm:text-sm font-medium leading-relaxed text-zinc-800">
-                Score matches ball-by-ball. The system updates the public tournament board, player stats, and active scoreboards in real-time, keeping fans connected.
+                Score matches ball-by-ball. The system updates the tournament board, player stats, and active scoreboards in real-time, keeping fans connected.
               </p>
             </div>
           </div>
 
-          {/* Right Column (Dark UI Console) */}
-          <div className="col-span-12 lg:col-span-7 flex flex-col bg-[#07090f]">
-            {/* Header Tabs */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/80 bg-zinc-950/20">
-              <div className="flex gap-2">
-                {["Interactive Scorer", "Live Scorecard API"].map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setStep3Tab(tab)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      step3Tab === tab ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => handleCopy(step3Tab === "Interactive Scorer" ? `${score.runs}/${score.wickets} in ${score.overs}.${score.balls}` : scoreApiStr)}
-                className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-white transition-colors px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-850"
-              >
-                <span>{copiedText !== "" ? "Copied!" : "Copy Data"}</span>
-              </button>
-            </div>
-
-            {/* Display Scorer Mockup */}
-            <div className="p-6 sm:p-8 flex-1 flex flex-col justify-center bg-zinc-950/40">
-              {step3Tab === "Interactive Scorer" ? (
-                <div className="flex flex-col gap-5 max-w-md mx-auto w-full">
-                  {/* Digital Board */}
-                  <div className="bg-zinc-900 border border-zinc-850 p-4.5 rounded-xl flex items-center justify-between shadow-lg">
-                    <div>
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">LIVE SCOREBOARD</span>
-                      <div className="text-white text-3xl font-black tracking-tight mt-0.5">
-                        {score.runs} <span className="text-zinc-500 font-normal">/</span> {score.wickets}
-                      </div>
-                      <span className="text-xs text-[#d2fc00] font-bold mt-1 block">
-                        Overs: {score.overs}.{score.balls}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">BATSMEN</span>
-                      {score.batsmen.map((b, idx) => (
-                        <div key={idx} className="text-xs text-zinc-300 font-semibold mt-0.5">
-                          {b.name}: <span className="text-white font-black">{b.runs}</span> <span className="text-zinc-500">({b.balls})</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Scorer Buttons */}
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <button
-                      onClick={() => handleScoreEvent("dot")}
-                      className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-bold transition-all hover:scale-105 active:scale-95"
-                    >
-                      Dot Ball
-                    </button>
-                    <button
-                      onClick={() => handleScoreEvent("1")}
-                      className="px-3.5 py-2 bg-zinc-800 hover:bg-[#d2fc00] hover:text-zinc-950 text-white rounded-lg text-xs font-bold transition-all hover:scale-105 active:scale-95"
-                    >
-                      +1 Run
-                    </button>
-                    <button
-                      onClick={() => handleScoreEvent("4")}
-                      className="px-3.5 py-2 bg-zinc-800 hover:bg-[#d2fc00] hover:text-zinc-950 text-white rounded-lg text-xs font-bold transition-all hover:scale-105 active:scale-95"
-                    >
-                      +4 Runs
-                    </button>
-                    <button
-                      onClick={() => handleScoreEvent("6")}
-                      className="px-3.5 py-2 bg-zinc-800 hover:bg-[#d2fc00] hover:text-zinc-950 text-white rounded-lg text-xs font-bold transition-all hover:scale-105 active:scale-95"
-                    >
-                      +6 Runs
-                    </button>
-                    <button
-                      onClick={() => handleScoreEvent("wicket")}
-                      className="px-3.5 py-2 bg-red-950 hover:bg-red-900 border border-red-800/80 text-red-200 rounded-lg text-xs font-bold transition-all hover:scale-105 active:scale-95"
-                    >
-                      Wicket!
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <pre className="text-xs font-mono text-zinc-300 leading-relaxed overflow-x-auto max-h-[300px]">
-                  <code>{scoreApiStr}</code>
-                </pre>
-              )}
+          {/* Right Column (Live Scorer Image) */}
+          <div className="col-span-12 lg:col-span-7 flex items-center justify-center bg-[#07090f] p-6 sm:p-10">
+            <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-zinc-950/40 border border-zinc-850 flex items-center justify-center p-4">
+              <img
+                src="/ball by ball tracking.png"
+                alt="Ball-by-ball Scorer"
+                className="w-full h-full object-contain hover:scale-[1.02] transition-transform duration-300 ease-out"
+              />
             </div>
           </div>
         </div>
@@ -700,7 +445,7 @@ function Bento() {
     },
     {
       title: "Invitation system",
-      desc: "Onboard new teams and players using shareable secure invitation tokens to join tournaments, eliminating manual entry.",
+      desc: "Onboard new players using shareable secure invitation links to join tournaments.",
       img: "/invitation_system_bento.png",
       span: "col-span-12 md:col-span-4",
       aspect: "aspect-[1.1]",
@@ -708,7 +453,7 @@ function Bento() {
   ];
 
   return (
-    <section id="bento-features" className="py-24 px-6 sm:px-[8vw]">
+    <section id="info" className="py-24 px-6 sm:px-[8vw]">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">

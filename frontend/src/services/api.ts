@@ -1,4 +1,3 @@
-// Centralized HTTP client for the Cricnerd backend API
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -53,7 +52,7 @@ async function request<T>(
   // }
 
   const config: RequestInit = {
-    credentials: "include", // Send cookies (JWT)
+    credentials: "include",
     mode: 'cors', 
     ...options,
     headers,

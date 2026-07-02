@@ -2,11 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Loader2,
-  Calendar,
-  MapPin,
-  User,
-  Clock,
-  Swords,
   ChevronLeft,
   AlertCircle,
   Undo2,
@@ -39,15 +34,17 @@ export default function Scorecard() {
 
   // Scorecard / Statistics from backend
   const [scorecardData, setScorecardData] = useState<{
-    batters: { playerName: string; runs: number; balls: number }[];
-    bowlers: { playerName: string; wickets: number; runsConceded: number; overs: string }[];
+    batters: { playerId?: string; playerName: string; runs: number; balls: number }[];
+    bowlers: { playerId?: string; playerName: string; wickets: number; runsConceded: number; overs: string }[];
     ballsCommentary: (string | number)[];
     dismissedPlayerIds: string[];
     allBalls: any[];
   } | null>(null);
 
   // Scoring controls state
-  const [activeTab, setActiveTab] = useState<Tab>("Scorecard");
+  const [activeTab, setActiveTab] = useState<Tab>(
+    window.location.pathname.includes("/live-scoring") ? "Live Score" : "Scorecard"
+  );
   const [battingTeamId, setBattingTeamId] = useState<string>("");
   const [strikerId, setStrikerId] = useState<string>("");
   const [bowlerId, setBowlerId] = useState<string>("");
@@ -139,7 +136,7 @@ export default function Scorecard() {
 
       // Fetch team scorecard details
       const scorecardRes = await matchService.getScorecard(matchId);
-      setScorecardData(scorecardRes);
+      setScorecardData(scorecardRes as any);
       
       // We can mock or populate teams based on scorecard response
       setTeamA({ _id: m.teamAId, teamName: scorecardRes.matchScore.teamA.teamName, tournamentId: m.tournamentId, tournamentWins: 0 });
@@ -168,7 +165,7 @@ export default function Scorecard() {
         matchService.getScorecard(matchId),
       ]);
       setMatch(matchRes.matchExist);
-      setScorecardData(scorecardRes);
+      setScorecardData(scorecardRes as any);
       setLastUpdated("Just now");
     } catch (err: any) {
       console.error("Failed to refresh live match state:", err);
@@ -814,11 +811,11 @@ export default function Scorecard() {
 
             {/* TAB: Scorecard Tables */}
             {activeTab === "Scorecard" && (() => {
-              const isTeamAPlayer = (playerId: string, playerName: string) => {
+              const isTeamAPlayer = (playerId?: string, playerName?: string) => {
                 return squadA.some(p => p._id === playerId || p.fullName === playerName);
               };
 
-              const isTeamBPlayer = (playerId: string, playerName: string) => {
+              const isTeamBPlayer = (playerId?: string, playerName?: string) => {
                 return squadB.some(p => p._id === playerId || p.fullName === playerName);
               };
 

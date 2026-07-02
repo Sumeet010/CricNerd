@@ -88,7 +88,6 @@ export default function Register() {
     { label: "One special character", test: (val: string) => /[^A-Za-z0-9]/.test(val) },
   ];
 
-  const allRulesSatisfied = passwordRules.every((rule) => rule.test(password));
 
   async function onSubmit(values: RegisterFormValues) {
     setIsLoading(true);

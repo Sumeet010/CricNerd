@@ -1,4 +1,4 @@
-// Shared API contract types aligned with the backend database models and controllers
+// Shared API types same as backend database models and controllers
 
 // --- Enums / Constants ---
 export type UserRole = "PLAYER" | "ORGANIZER";

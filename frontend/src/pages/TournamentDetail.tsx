@@ -17,7 +17,6 @@ import {
   ChevronLeft,
   Trash2,
   Radio,
-  ShieldCheck,
   X,
   Play,
 } from "lucide-react";
@@ -402,11 +401,11 @@ function AddMatchModalContent({
 }
 
 /* ─── Role badge ─── */
-const ROLE_COLORS: Record<string, string> = {
-  Batter: "bg-blue-600/20 text-blue-300 border border-blue-600/30",
-  Bowler: "bg-green-600/20 text-green-300 border border-green-600/30",
-  Allrounder: "bg-yellow-600/20 text-yellow-300 border border-yellow-600/30",
-};
+// const ROLE_COLORS: Record<string, string> = {
+//   Batter: "bg-blue-600/20 text-blue-300 border border-blue-600/30",
+//   Bowler: "bg-green-600/20 text-green-300 border border-green-600/30",
+//   Allrounder: "bg-yellow-600/20 text-yellow-300 border border-yellow-600/30",
+// };
 
 /* ─── Add Player Modal — Register & assign to team ─── */
 interface AddPlayerModalProps {
@@ -551,7 +550,6 @@ function SquadViewer({
   tournamentId,
   teams,
   squadMap,
-  onOpenAddPlayer,
   onOpenAddTeam,
   onRefreshSquads,
   refreshTrigger,
@@ -561,7 +559,6 @@ function SquadViewer({
   tournamentId: string;
   teams: Team[];
   squadMap: Record<string, any[]>;
-  onOpenAddPlayer: (teamId: string) => void;
   onOpenAddTeam: () => void;
   onRefreshSquads: () => Promise<void>;
   refreshTrigger: number;
@@ -887,13 +884,11 @@ function PlayersTab({
         </div>
       )}
 
-      {/* IPL-style viewer */}
       {teams.length > 0 && (
         <SquadViewer
           tournamentId={tournamentId}
           teams={teams}
           squadMap={squadMap}
-          onOpenAddPlayer={onOpenAddPlayer}
           onOpenAddTeam={onOpenAddTeam}
           onRefreshSquads={onRefreshSquads}
           refreshTrigger={playerVersion}

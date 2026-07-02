@@ -4,13 +4,12 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 import { Loader2 } from "lucide-react";
 
-// Lazy-loaded pages
+
 const Landing = lazy(() => import("@/pages/Landing"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Login = lazy(() => import("@/pages/Login"));
 const Register = lazy(() => import("@/pages/Register"));
 const Tournaments = lazy(() => import("@/pages/Tournaments"));
-const LiveScoring = lazy(() => import("@/pages/LiveScoring"));
 const Scorecard = lazy(() => import("@/pages/Scorecard"));
 const TournamentDetail = lazy(() => import("@/pages/TournamentDetail"));
 const InviteAccept = lazy(() => import("@/pages/InviteAccept"));
@@ -77,7 +76,7 @@ function App() {
               path="/live-scoring/:matchId"
               element={
                 <ProtectedRoute>
-                  <LiveScoring />
+                  <Scorecard />
                 </ProtectedRoute>
               }
             />
