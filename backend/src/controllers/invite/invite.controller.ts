@@ -46,7 +46,9 @@ export async function invite(req: Request, res: Response) {
       createdBy: (req as any).userId,
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const origin = req.headers.origin;
+    const frontendUrl = process.env.FRONTEND_URL || (origin && origin !== "null" ? origin : "http://localhost:5173");
+    
     return res.status(201).json({
       inviteLink: `${frontendUrl}/invite/${token}`,
     });
