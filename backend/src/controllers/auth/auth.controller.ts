@@ -18,6 +18,7 @@ export function setTokenCookie(res: Response, token: string) {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
+    path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 }
@@ -132,7 +133,13 @@ export async function loginHandler(req: Request, res: Response) {
 // POST /auth/logout
 export async function logoutHandler(req: Request, res: Response) {
   try {
-    res.clearCookie("token");
+    const isProduction = process.env.NODE_ENV === "production";
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/",
+    });
     return res.status(200).json({
       message: "Logged out successfully",
     });
