@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 import { Loader2 } from "lucide-react";
@@ -91,6 +92,7 @@ function App() {
           </Routes>
         </Suspense>
       </BrowserRouter>
+      <Analytics />
     </AuthProvider>
   );
 }
