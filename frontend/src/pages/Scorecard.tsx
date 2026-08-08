@@ -47,13 +47,15 @@ export default function Scorecard() {
   );
   const [battingTeamId, setBattingTeamId] = useState<string>("");
   const [strikerId, setStrikerId] = useState<string>("");
+  const [nonStrikerId, setNonStrikerId] = useState<string>("");
   const [bowlerId, setBowlerId] = useState<string>("");
 
   // Ball inputs state
   const [runsOffBat, setRunsOffBat] = useState<number>(0);
   const [extraType, setExtraType] = useState<"NONE" | "WIDE" | "NO_BALL">("NONE");
   const [isWicket, setIsWicket] = useState<boolean>(false);
-  const [wicketType, setWicketType] = useState<"BOWLED" | "CAUGHT" | "STUMPED" | "HIT_WICKET">("BOWLED");
+  const [dismissedPlayerId, setDismissedPlayerId] = useState<string>("");
+  const [wicketType, setWicketType] = useState<"BOWLED" | "CAUGHT" | "STUMPED" | "RUN_OUT" | "LBW" | "HIT_WICKET">("BOWLED");
 
   // UX states
   const [recording, setRecording] = useState(false);
@@ -273,8 +275,17 @@ export default function Scorecard() {
     const nextBatting = battingTeamId === match.teamAId ? match.teamBId : match.teamAId;
     setBattingTeamId(nextBatting);
     setStrikerId("");
+    setNonStrikerId("");
     setBowlerId("");
+    setDismissedPlayerId("");
     setScoringError(null);
+  };
+
+  // Swap strike manually between Striker & Non-Striker
+  const handleSwapStrike = () => {
+    const temp = strikerId;
+    setStrikerId(nonStrikerId);
+    setNonStrikerId(temp);
   };
 
   // Record a delivery ball
@@ -292,6 +303,14 @@ export default function Scorecard() {
       setScoringError("Please select a Striker.");
       return;
     }
+    if (!nonStrikerId) {
+      setScoringError("Please select a Non-Striker.");
+      return;
+    }
+    if (strikerId === nonStrikerId) {
+      setScoringError("Striker and Non-Striker cannot be the same player.");
+      return;
+    }
     if (!bowlerId) {
       setScoringError("Please select a Bowler.");
       return;
@@ -302,12 +321,14 @@ export default function Scorecard() {
     try {
       // Calculate extra runs: Wide and No Ball automatically count as 1 extra run
       const extraRuns = extraType !== "NONE" ? 1 : 0;
+      const targetDismissedId = isWicket ? (dismissedPlayerId || strikerId) : undefined;
 
       const payload = {
         matchId,
         battingTeamId,
         bowlingTeamId: battingTeamId === match.teamAId ? match.teamBId : match.teamAId,
         strikerId,
+        nonStrikerId,
         bowlerId,
         overNumber: nextOverNumber,
         ballNumber: nextBallNumber,
@@ -315,21 +336,25 @@ export default function Scorecard() {
         extraRuns,
         extraType,
         isWicket,
-        dismissedPlayerId: isWicket ? strikerId : undefined,
+        dismissedPlayerId: targetDismissedId,
         wicketType: isWicket ? wicketType : undefined,
       };
 
-      await ballService.addBall(payload);
+      const res: any = await ballService.addBall(payload);
       setSuccessMsg("Delivery recorded successfully!");
 
       // Reset fast inputs
       setRunsOffBat(0);
       setExtraType("NONE");
       setIsWicket(false);
+      setDismissedPlayerId("");
 
-      // If a wicket fell, we need to reset the striker so organizer chooses the new batter
-      if (isWicket) {
-        setStrikerId("");
+      // Update striker & non-striker automatically based on strike rotation rules
+      if (res?.nextStrikerId !== undefined) {
+        setStrikerId(res.nextStrikerId || "");
+      }
+      if (res?.nextNonStrikerId !== undefined) {
+        setNonStrikerId(res.nextNonStrikerId || "");
       }
 
       // Reload match details and stats in the background without blocking the UI thread
@@ -436,8 +461,9 @@ export default function Scorecard() {
   // Only use striker/bowler from last ball if it was bowled in the current innings
   const lastBallMatchesCurrentInnings = lastBall && lastBall.battingTeamId === activeBattingTeamId;
 
-  const activeStrikerId  = strikerId  || (lastBallMatchesCurrentInnings ? lastBall?.strikerId : "") || "";
-  const activeBowlerId   = bowlerId   || (lastBallMatchesCurrentInnings ? lastBall?.bowlerId : "")  || "";
+  const activeStrikerId    = strikerId    || (lastBallMatchesCurrentInnings ? lastBall?.strikerId : "") || "";
+  const activeNonStrikerId = nonStrikerId || (lastBallMatchesCurrentInnings ? (lastBall?.nonStrikerId || "") : "") || "";
+  const activeBowlerId     = bowlerId     || (lastBallMatchesCurrentInnings ? lastBall?.bowlerId : "")  || "";
 
   const activeBattingSquad = activeBattingTeamId === match?.teamAId ? squadA : squadB;
   const activeBowlingSquad = activeBattingTeamId === match?.teamAId ? squadB : squadA;
@@ -634,34 +660,78 @@ export default function Scorecard() {
                       </div>
                     )}
 
-                    {/* 1. Selection Fields (Striker, Non-Striker, Bowler) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      
-                      {/* Striker Select */}
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider">Striker (Batting)</label>
-                        {isInningsComplete ? (
-                          <div className="w-full bg-[#1c1c1f]/40 border border-dashed border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-500 font-semibold italic">
-                            {isAllOut ? "All Out / Innings Complete" : "Overs Completed"}
-                          </div>
-                        ) : (
-                          <select
-                            value={strikerId}
-                            onChange={(e) => setStrikerId(e.target.value)}
-                            className="w-full bg-[#1c1c1f] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-zinc-700"
+                    {/* 1. Selection Fields (Striker, Non-Striker, Swap, Bowler) */}
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
+                        
+                        {/* Striker Select */}
+                        <div className="sm:col-span-2 space-y-1.5">
+                          <label className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider flex items-center justify-between">
+                            <span>🏏 Striker</span>
+                            <span className="text-amber-400 font-black">* (On Strike)</span>
+                          </label>
+                          {isInningsComplete ? (
+                            <div className="w-full bg-[#1c1c1f]/40 border border-dashed border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-500 font-semibold italic">
+                              {isAllOut ? "All Out / Innings Complete" : "Overs Completed"}
+                            </div>
+                          ) : (
+                            <select
+                              value={strikerId}
+                              onChange={(e) => setStrikerId(e.target.value)}
+                              className="w-full bg-[#1c1c1f] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-zinc-700"
+                            >
+                              <option value="">-- Select Striker --</option>
+                              {availableBatters.map((p) => (
+                                <option key={p._id} value={p._id} disabled={p._id === nonStrikerId}>
+                                  {p.fullName} {p._id === nonStrikerId ? "(Non-Striker)" : ""}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+
+                        {/* Swap Strike Button */}
+                        <div className="sm:col-span-1 flex justify-center pb-0.5">
+                          <button
+                            type="button"
+                            onClick={handleSwapStrike}
+                            disabled={!strikerId || !nonStrikerId}
+                            title="Swap Strike between Striker and Non-Striker"
+                            className="w-full bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-[11px] font-bold py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1 disabled:opacity-40"
                           >
-                            <option value="">-- Select Striker --</option>
-                            {availableBatters.map((p) => (
-                              <option key={p._id} value={p._id}>
-                                {p.fullName}
-                              </option>
-                            ))}
-                          </select>
-                        )}
+                            <RefreshCw className="w-3.5 h-3.5" /> Swap 🔄
+                          </button>
+                        </div>
+
+                        {/* Non-Striker Select */}
+                        <div className="sm:col-span-2 space-y-1.5">
+                          <label className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider">
+                            🏃 Non-Striker
+                          </label>
+                          {isInningsComplete ? (
+                            <div className="w-full bg-[#1c1c1f]/40 border border-dashed border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-500 font-semibold italic">
+                              Innings Complete
+                            </div>
+                          ) : (
+                            <select
+                              value={nonStrikerId}
+                              onChange={(e) => setNonStrikerId(e.target.value)}
+                              className="w-full bg-[#1c1c1f] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-zinc-700"
+                            >
+                              <option value="">-- Select Non-Striker --</option>
+                              {availableBatters.map((p) => (
+                                <option key={p._id} value={p._id} disabled={p._id === strikerId}>
+                                  {p.fullName} {p._id === strikerId ? "(Striker)" : ""}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+
                       </div>
 
                       {/* Bowler Select */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 pt-1">
                         <label className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider">Bowler (Bowling)</label>
                         <select
                           value={bowlerId}
@@ -676,7 +746,6 @@ export default function Scorecard() {
                           ))}
                         </select>
                       </div>
-
                     </div>
 
                     {/* 2. Interactive Scoring Control Panels */}
@@ -747,20 +816,47 @@ export default function Scorecard() {
                           </button>
                         </div>
 
-                        {/* Wicket Dismissal Type */}
+                        {/* Wicket Dismissal Type & Dismissed Batter Select */}
                         {isWicket && (
-                          <div className="space-y-1.5 animate-fade-in">
-                            <label className="text-[10px] text-red-400 font-extrabold uppercase tracking-wider">Dismissal Type</label>
-                            <select
-                              value={wicketType}
-                              onChange={(e: any) => setWicketType(e.target.value)}
-                              className="w-full bg-[#1c1c1f] border border-red-900/50 rounded-lg px-2.5 py-1.5 text-xs text-red-300 font-semibold focus:outline-none"
-                            >
-                              <option value="BOWLED">Bowled</option>
-                              <option value="CAUGHT">Caught</option>
-                              <option value="STUMPED">Stumped</option>
-                              <option value="HIT_WICKET">Hit Wicket</option>
-                            </select>
+                          <div className="space-y-3 col-span-1 sm:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-red-950/20 border border-red-900/40 p-3 rounded-xl">
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] text-red-400 font-extrabold uppercase tracking-wider">Dismissal Type</label>
+                              <select
+                                value={wicketType}
+                                onChange={(e: any) => {
+                                  setWicketType(e.target.value);
+                                  if (e.target.value !== "RUN_OUT") {
+                                    setDismissedPlayerId(strikerId);
+                                  }
+                                }}
+                                className="w-full bg-[#1c1c1f] border border-red-900/50 rounded-lg px-2.5 py-1.5 text-xs text-red-300 font-semibold focus:outline-none"
+                              >
+                                <option value="BOWLED">Bowled</option>
+                                <option value="CAUGHT">Caught</option>
+                                <option value="STUMPED">Stumped</option>
+                                <option value="RUN_OUT">Run Out</option>
+                                <option value="LBW">LBW</option>
+                                <option value="HIT_WICKET">Hit Wicket</option>
+                              </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] text-red-400 font-extrabold uppercase tracking-wider">Dismissed Batter</label>
+                              <select
+                                value={dismissedPlayerId || strikerId}
+                                onChange={(e) => setDismissedPlayerId(e.target.value)}
+                                className="w-full bg-[#1c1c1f] border border-red-900/50 rounded-lg px-2.5 py-1.5 text-xs text-red-300 font-semibold focus:outline-none"
+                              >
+                                <option value={strikerId}>
+                                  Striker ({availableBatters.find(p => p._id === strikerId)?.fullName || "Striker"})
+                                </option>
+                                {nonStrikerId && (
+                                  <option value={nonStrikerId}>
+                                    Non-Striker ({availableBatters.find(p => p._id === nonStrikerId)?.fullName || "Non-Striker"})
+                                  </option>
+                                )}
+                              </select>
+                            </div>
                           </div>
                         )}
 
@@ -1088,17 +1184,19 @@ export default function Scorecard() {
               </div>
             </div>
 
-            {/* Active Batter Details */}
+            {/* Active Batters Details (Striker & Non-Striker) */}
             <div className="bg-[#161618] border border-zinc-800/80 rounded-2xl p-5 space-y-4">
-              <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Batter</span>
-              <div className="space-y-3.5">
+              <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Batters at Crease</span>
+              <div className="space-y-3">
+                {/* Striker */}
                 {activeStrikerId ? (
                   <div className="flex justify-between items-center bg-[#121214]/50 border border-zinc-850 p-3 rounded-xl">
                     <div className="min-w-0">
                       <h4 className="text-white font-extrabold text-xs truncate flex items-center gap-1">
                         🏏 {activeBattingSquad.find(p => p._id === activeStrikerId)?.fullName}
+                        <span className="text-[10px] text-amber-400 font-black">*</span>
                       </h4>
-                      <span className="text-zinc-500 text-[10px] font-semibold">Striker · Not Out</span>
+                      <span className="text-zinc-500 text-[10px] font-semibold">Striker (On Strike)</span>
                     </div>
                     <div className="text-right">
                       <span className="text-white font-black text-sm">
@@ -1110,8 +1208,32 @@ export default function Scorecard() {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-zinc-900/30 border border-dashed border-zinc-800 text-zinc-650 text-center py-4 rounded-xl text-xs font-semibold">
+                  <div className="bg-zinc-900/30 border border-dashed border-zinc-800 text-zinc-650 text-center py-3 rounded-xl text-xs font-semibold">
                     No active striker selected
+                  </div>
+                )}
+
+                {/* Non-Striker */}
+                {activeNonStrikerId ? (
+                  <div className="flex justify-between items-center bg-[#121214]/50 border border-zinc-850 p-3 rounded-xl">
+                    <div className="min-w-0">
+                      <h4 className="text-zinc-300 font-extrabold text-xs truncate flex items-center gap-1">
+                        🏃 {activeBattingSquad.find(p => p._id === activeNonStrikerId)?.fullName}
+                      </h4>
+                      <span className="text-zinc-500 text-[10px] font-semibold">Non-Striker</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-white font-black text-sm">
+                        {scorecardData?.batters?.find(b => b.playerName === activeBattingSquad.find(p => p._id === activeNonStrikerId)?.fullName)?.runs ?? 0}
+                      </span>
+                      <span className="text-zinc-500 text-xs ml-0.5">
+                        ({scorecardData?.batters?.find(b => b.playerName === activeBattingSquad.find(p => p._id === activeNonStrikerId)?.fullName)?.balls ?? 0})
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-zinc-900/30 border border-dashed border-zinc-800 text-zinc-650 text-center py-3 rounded-xl text-xs font-semibold">
+                    No active non-striker selected
                   </div>
                 )}
               </div>

@@ -7,7 +7,7 @@ export type PlayingFormat = "5 Overs" | "6 Overs" | "20 Overs";
 export type PlayingStatus = "UPCOMING" | "ONGOING" | "COMPLETED";
 export type MatchStatus = "SCHEDULED" | "LIVE" | "COMPLETED";
 export type ExtraType = "NONE" | "DEAD" | "WIDE" | "NO_BALL";
-export type WicketType = "BOWLED" | "CAUGHT" | "STUMPED" | "HIT_WICKET";
+export type WicketType = "BOWLED" | "CAUGHT" | "STUMPED" | "RUN_OUT" | "LBW" | "HIT_WICKET";
 
 // --- Database Models ---
 
@@ -81,6 +81,7 @@ export interface Ball {
   battingTeamId: string;
   bowlingTeamId: string;
   strikerId: string;
+  nonStrikerId?: string;
   bowlerId: string;
   overNumber: number;
   ballNumber: number;
@@ -162,6 +163,7 @@ export interface AddBallRequest {
   battingTeamId: string;
   bowlingTeamId: string;
   strikerId: string;
+  nonStrikerId?: string;
   bowlerId: string;
   overNumber: number;
   ballNumber: number;
