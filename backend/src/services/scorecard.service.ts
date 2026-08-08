@@ -71,6 +71,8 @@ export async function getScorecardData(matchId: string) {
     return b.runsOffBat;
   });
 
+  const latestBall = await Ball.findOne({ matchId }).sort({ createdAt: -1 }).lean();
+
   return {
     matchId: match._id.toString(),
     matchStatus: match.matchStatus,
@@ -81,5 +83,8 @@ export async function getScorecardData(matchId: string) {
     ballsCommentary,
     allBalls,
     dismissedPlayerIds,
+    latestStrikerId: latestBall?.strikerId?.toString() || null,
+    latestNonStrikerId: (latestBall as any)?.nonStrikerId?.toString() || null,
+    latestBowlerId: latestBall?.bowlerId?.toString() || null,
   };
 }
