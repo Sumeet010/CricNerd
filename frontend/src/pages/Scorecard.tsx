@@ -490,9 +490,6 @@ export default function Scorecard() {
 
   const activeBattingTeamId = battingTeamId || lastBall?.battingTeamId || "";
 
-  // Only use striker/bowler from last ball if it was bowled in the current innings
-  const lastBallMatchesCurrentInnings = lastBall && lastBall.battingTeamId === activeBattingTeamId;
-
   const activeStrikerId    = strikerId    || ((scorecardData as any)?.currentStrikerId || "") || "";
   const activeNonStrikerId = nonStrikerId || ((scorecardData as any)?.currentNonStrikerId || "") || "";
   const activeBowlerId     = bowlerId     || ((scorecardData as any)?.currentBowlerId || "")  || "";

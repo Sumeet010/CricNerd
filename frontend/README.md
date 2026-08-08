@@ -260,3 +260,20 @@ GitHub: https://github.com/Sumeet010
 <div align="center">
 
 </div>
+
+Phase 1: Production Reliability & Security (High Impact / Low Effort)
+├── Add Centralized Express Error Handling Middleware & Custom ApiError
+├── Add Security Middlewares (Helmet, Rate Limiting)
+├── Add Mongoose DB Indexes & ACID Transactions for Scoring
+└── Create Root README.md with Mermaid Architecture Diagram & Badges
+
+Phase 2: Domain Logic & Engine Upgrades (Interview Highlights)
+├── Implement Points Table Engine & Net Run Rate (NRR) Calculator
+├── Refine Ball-by-Ball State Machine (Strike rotation, Innings end, Auto Match Winner)
+├── Build Automated Tournament Fixture Generator
+└── Complete Players.tsx & Teams.tsx Page Views
+
+Phase 3: Testing & DevOps Hardening
+├── Add Unit & Integration Tests (Vitest + Supertest)
+├── Dockerize Application (Backend & Frontend Dockerfiles + docker-compose.yml)
+└── Set up GitHub Actions CI Pipeline
