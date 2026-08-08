@@ -73,6 +73,67 @@ export async function getScorecardData(matchId: string) {
 
   const latestBall = await Ball.findOne({ matchId }).sort({ createdAt: -1 }).lean();
 
+  let currentStrikerId: string | null = null;
+  let currentNonStrikerId: string | null = null;
+  let currentBowlerId: string | null = null;
+
+  if (latestBall) {
+    const sId = latestBall.strikerId?.toString();
+    const nsId = (latestBall as any).nonStrikerId?.toString() || null;
+    const bId = latestBall.bowlerId?.toString();
+
+    // Find legal balls in the latest over to check if over completed
+    const existingBallsInOver = await Ball.find({
+      matchId,
+      battingTeamId: latestBall.battingTeamId,
+      overNumber: latestBall.overNumber,
+    }).lean();
+
+    const legalBallCount = existingBallsInOver.filter((b) => b.isLegalDelivery).length;
+    const isOverCompleted = legalBallCount >= 6;
+    const isOddRuns = (latestBall.runsOffBat % 2 !== 0);
+
+    if (latestBall.isWicket) {
+      const isStrikerDismissed = (latestBall.dismissedPlayerId?.toString() === sId);
+
+      if (isStrikerDismissed) {
+        const survivingNonStriker = nsId;
+        if (isOverCompleted) {
+          currentStrikerId = survivingNonStriker;
+          currentNonStrikerId = null;
+        } else {
+          currentStrikerId = null;
+          currentNonStrikerId = survivingNonStriker;
+        }
+      } else {
+        const survivingStriker = sId;
+        if (isOddRuns) {
+          currentStrikerId = null;
+          currentNonStrikerId = survivingStriker;
+        } else {
+          currentStrikerId = survivingStriker;
+          currentNonStrikerId = null;
+        }
+      }
+    } else {
+      let s = sId;
+      let ns = nsId;
+
+      if (isOddRuns && ns) {
+        [s, ns] = [ns, s];
+      }
+
+      if (isOverCompleted && ns) {
+        [s, ns] = [ns, s];
+      }
+
+      currentStrikerId = s;
+      currentNonStrikerId = ns;
+    }
+
+    currentBowlerId = isOverCompleted ? null : bId;
+  }
+
   return {
     matchId: match._id.toString(),
     matchStatus: match.matchStatus,
@@ -83,8 +144,8 @@ export async function getScorecardData(matchId: string) {
     ballsCommentary,
     allBalls,
     dismissedPlayerIds,
-    latestStrikerId: latestBall?.strikerId?.toString() || null,
-    latestNonStrikerId: (latestBall as any)?.nonStrikerId?.toString() || null,
-    latestBowlerId: latestBall?.bowlerId?.toString() || null,
+    currentStrikerId,
+    currentNonStrikerId,
+    currentBowlerId,
   };
 }

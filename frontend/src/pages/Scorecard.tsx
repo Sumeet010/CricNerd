@@ -230,18 +230,18 @@ export default function Scorecard() {
     };
   }, [matchId]);
 
-  // Auto-populate active crease batters and bowler from latest recorded ball when page loads
+  // Auto-populate active crease batters and bowler from scorecardData when loaded or updated
   useEffect(() => {
     if (!scorecardData) return;
 
-    if (!strikerId && (scorecardData as any).latestStrikerId) {
-      setStrikerId((scorecardData as any).latestStrikerId);
+    if ((scorecardData as any).currentStrikerId !== undefined) {
+      setStrikerId((scorecardData as any).currentStrikerId || "");
     }
-    if (!nonStrikerId && (scorecardData as any).latestNonStrikerId) {
-      setNonStrikerId((scorecardData as any).latestNonStrikerId);
+    if ((scorecardData as any).currentNonStrikerId !== undefined) {
+      setNonStrikerId((scorecardData as any).currentNonStrikerId || "");
     }
-    if (!bowlerId && (scorecardData as any).latestBowlerId) {
-      setBowlerId((scorecardData as any).latestBowlerId);
+    if ((scorecardData as any).currentBowlerId !== undefined) {
+      setBowlerId((scorecardData as any).currentBowlerId || "");
     }
   }, [scorecardData]);
 
@@ -493,9 +493,9 @@ export default function Scorecard() {
   // Only use striker/bowler from last ball if it was bowled in the current innings
   const lastBallMatchesCurrentInnings = lastBall && lastBall.battingTeamId === activeBattingTeamId;
 
-  const activeStrikerId    = strikerId    || (lastBallMatchesCurrentInnings ? lastBall?.strikerId : "") || "";
-  const activeNonStrikerId = nonStrikerId || (lastBallMatchesCurrentInnings ? (lastBall?.nonStrikerId || "") : "") || "";
-  const activeBowlerId     = bowlerId     || (lastBallMatchesCurrentInnings ? lastBall?.bowlerId : "")  || "";
+  const activeStrikerId    = strikerId    || ((scorecardData as any)?.currentStrikerId || "") || "";
+  const activeNonStrikerId = nonStrikerId || ((scorecardData as any)?.currentNonStrikerId || "") || "";
+  const activeBowlerId     = bowlerId     || ((scorecardData as any)?.currentBowlerId || "")  || "";
 
   const activeBattingSquad = activeBattingTeamId === match?.teamAId ? squadA : squadB;
   const activeBowlingSquad = activeBattingTeamId === match?.teamAId ? squadB : squadA;
