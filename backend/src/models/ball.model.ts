@@ -24,6 +24,10 @@ const ballSchema = new mongoose.Schema({
         ref: "Player",
         required: true
     },
+    nonStrikerId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Player"
+    },
     bowlerId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Player",
