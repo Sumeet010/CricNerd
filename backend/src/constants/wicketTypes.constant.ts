@@ -1,1 +1,1 @@
-export const WICKET_TYPES = ["BOWLED", "CAUGHT", "STUMPED", "HIT_WICKET"] 
+export const WICKET_TYPES = ["BOWLED", "CAUGHT", "STUMPED", "RUN_OUT", "LBW", "HIT_WICKET"] as const; 
