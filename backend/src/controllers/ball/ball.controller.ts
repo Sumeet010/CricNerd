@@ -27,6 +27,7 @@ export async function addBall(req: Request, res: Response) {
       battingTeamId,
       bowlingTeamId,
       strikerId,
+      nonStrikerId,
       bowlerId,
       extraType,
       overNumber,
@@ -160,7 +161,39 @@ export async function addBall(req: Request, res: Response) {
       });
     }
 
-    // Will find a collection from Ball where isWicket will be true for the provided strikerId which is already dismissed
+    if (nonStrikerId) {
+      if (nonStrikerId === strikerId) {
+        return res.status(400).json({
+          message: "Striker and Non-Striker cannot be the same player",
+        });
+      }
+
+      const nonStrikerAssignment = await PlayerTeamTournament.findOne({
+        playerId: nonStrikerId,
+        teamId: battingTeamId,
+        tournamentId: match.tournamentId,
+      });
+
+      if (!nonStrikerAssignment) {
+        return res.status(400).json({
+          message: "Non-Striker does not belong to batting team in this tournament",
+        });
+      }
+
+      const isNonStrikerDismissed = await Ball.findOne({
+        matchId,
+        dismissedPlayerId: nonStrikerId,
+        isWicket: true,
+      });
+
+      if (isNonStrikerDismissed) {
+        return res.status(400).json({
+          message: "Non-Striker is already dismissed.",
+        });
+      }
+    }
+
+    // Check if striker is already dismissed
     const isPlayerAlreadyDismissed = await Ball.findOne({
       matchId,
       dismissedPlayerId: strikerId,
@@ -169,7 +202,7 @@ export async function addBall(req: Request, res: Response) {
 
     if (isPlayerAlreadyDismissed) {
       return res.status(400).json({
-        message: "Player is already dismissed.",
+        message: "Striker is already dismissed.",
       });
     }
     // -- Handling Wickets --
@@ -180,10 +213,18 @@ export async function addBall(req: Request, res: Response) {
             "dismissedPlayerId and wicketType are required when isWicket is true",
         });
       }
-      if (dismissedPlayerId !== strikerId) {
-        return res.status(400).json({
-          message: "Only striker can be dismissed",
-        });
+      if (wicketType === "RUN_OUT") {
+        if (dismissedPlayerId !== strikerId && dismissedPlayerId !== nonStrikerId) {
+          return res.status(400).json({
+            message: "Dismissed player in Run Out must be either the Striker or Non-Striker",
+          });
+        }
+      } else {
+        if (dismissedPlayerId !== strikerId) {
+          return res.status(400).json({
+            message: `Only striker can be dismissed for ${wicketType}`,
+          });
+        }
       }
     } else {
       if (dismissedPlayerId || wicketType) {
@@ -242,7 +283,7 @@ export async function addBall(req: Request, res: Response) {
       }
     }
 
-    // Validataing client-side against server-side validation
+    // Validating client-side against server-side validation
     if (ballNumber !== expectedBallNumber) {
       return res.status(400).json({
         message: `Invalid ball number. Expected ${expectedBallNumber}`,
@@ -279,6 +320,7 @@ export async function addBall(req: Request, res: Response) {
       battingTeamId,
       bowlingTeamId,
       strikerId,
+      nonStrikerId,
       bowlerId,
       overNumber,
       ballNumber,
@@ -420,11 +462,52 @@ export async function addBall(req: Request, res: Response) {
       }
     }
 
+    // Calculate Next Striker and Next Non-Striker based on Cricket Strike Rotation rules
+    const isOverCompleted = (legalBallCount + (isLegalDelivery ? 1 : 0)) === 6;
+    const isOddRuns = (runsOffBat % 2 !== 0);
+
+    let nextStrikerId: string | null = strikerId;
+    let nextNonStrikerId: string | null = nonStrikerId || null;
+
+    if (isWicket) {
+      const isStrikerDismissed = (dismissedPlayerId === strikerId);
+      const survivingPlayerId = isStrikerDismissed ? (nonStrikerId || null) : strikerId;
+
+      if (isOverCompleted) {
+        // End of over + Wicket: Surviving batter takes strike for next over at opposite end
+        nextStrikerId = survivingPlayerId;
+        nextNonStrikerId = null;
+      } else {
+        // Mid-over Wicket: Incoming new batter takes strike (MCC Law 18)
+        nextStrikerId = null;
+        nextNonStrikerId = survivingPlayerId;
+      }
+    } else {
+      let s = strikerId;
+      let ns = nonStrikerId || null;
+
+      if (isOddRuns && ns) {
+        [s, ns] = [ns, s];
+      }
+
+      if (isOverCompleted && ns) {
+        [s, ns] = [ns, s];
+      }
+
+      nextStrikerId = s;
+      nextNonStrikerId = ns;
+    }
+
     try {
       const io = getIO();
       const scorecardData = await getScorecardData(matchId);
       if (scorecardData) {
-        io.emit("scorecardUpdate", scorecardData);
+        io.emit("scorecardUpdate", {
+          ...scorecardData,
+          nextStrikerId,
+          nextNonStrikerId,
+          isOverCompleted,
+        });
       }
     } catch (socketErr) {
       console.error("Socket emit error in addBall:", socketErr);
@@ -432,6 +515,9 @@ export async function addBall(req: Request, res: Response) {
 
     return res.status(201).json({
       newBall,
+      nextStrikerId,
+      nextNonStrikerId,
+      isOverCompleted,
       message: "Ball recorded successfully",
     });
   } catch (error) {
