@@ -193,6 +193,18 @@ export default function Scorecard() {
       console.log("Received scorecard update via socket:", data);
       if (data) {
         setScorecardData(data);
+
+        // Auto-update active batters if broadcast contains next strike rotation state
+        if (data.nextStrikerId !== undefined) {
+          setStrikerId(data.nextStrikerId || "");
+        }
+        if (data.nextNonStrikerId !== undefined) {
+          setNonStrikerId(data.nextNonStrikerId || "");
+        }
+        if (data.isOverCompleted) {
+          setBowlerId("");
+        }
+
         setMatch((prev) => {
           if (!prev) return null;
           return {
@@ -217,6 +229,21 @@ export default function Scorecard() {
       socket.off("scorecardUpdate", handleScorecardUpdate);
     };
   }, [matchId]);
+
+  // Auto-populate active crease batters and bowler from latest recorded ball when page loads
+  useEffect(() => {
+    if (!scorecardData) return;
+
+    if (!strikerId && (scorecardData as any).latestStrikerId) {
+      setStrikerId((scorecardData as any).latestStrikerId);
+    }
+    if (!nonStrikerId && (scorecardData as any).latestNonStrikerId) {
+      setNonStrikerId((scorecardData as any).latestNonStrikerId);
+    }
+    if (!bowlerId && (scorecardData as any).latestBowlerId) {
+      setBowlerId((scorecardData as any).latestBowlerId);
+    }
+  }, [scorecardData]);
 
   // Keep battingTeamId in sync for viewers/players when innings switches
   useEffect(() => {
@@ -355,6 +382,11 @@ export default function Scorecard() {
       }
       if (res?.nextNonStrikerId !== undefined) {
         setNonStrikerId(res.nextNonStrikerId || "");
+      }
+
+      // If over completed, reset bowler selection so scorer picks next over bowler
+      if (res?.isOverCompleted) {
+        setBowlerId("");
       }
 
       // Reload match details and stats in the background without blocking the UI thread

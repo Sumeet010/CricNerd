@@ -471,16 +471,39 @@ export async function addBall(req: Request, res: Response) {
 
     if (isWicket) {
       const isStrikerDismissed = (dismissedPlayerId === strikerId);
-      const survivingPlayerId = isStrikerDismissed ? (nonStrikerId || null) : strikerId;
 
-      if (isOverCompleted) {
-        // End of over + Wicket: Surviving batter takes strike for next over at opposite end
-        nextStrikerId = survivingPlayerId;
-        nextNonStrikerId = null;
+      if (isStrikerDismissed) {
+        // Striker dismissed
+        const survivingNonStriker = nonStrikerId || null;
+        if (isOverCompleted) {
+          // End of over + Wicket: Surviving batter takes strike for next over
+          nextStrikerId = survivingNonStriker;
+          nextNonStrikerId = null;
+        } else {
+          // Mid-over Wicket: Incoming new batter takes strike (MCC Law 18)
+          nextStrikerId = null;
+          nextNonStrikerId = survivingNonStriker;
+        }
       } else {
-        // Mid-over Wicket: Incoming new batter takes strike (MCC Law 18)
-        nextStrikerId = null;
-        nextNonStrikerId = survivingPlayerId;
+        // Non-Striker dismissed (Run Out)
+        const survivingStriker = strikerId;
+        if (isOverCompleted) {
+          if (isOddRuns) {
+            nextStrikerId = null;
+            nextNonStrikerId = survivingStriker;
+          } else {
+            nextStrikerId = survivingStriker;
+            nextNonStrikerId = null;
+          }
+        } else {
+          if (isOddRuns) {
+            nextStrikerId = null;
+            nextNonStrikerId = survivingStriker;
+          } else {
+            nextStrikerId = survivingStriker;
+            nextNonStrikerId = null;
+          }
+        }
       }
     } else {
       let s = strikerId;
