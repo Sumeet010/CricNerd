@@ -9,6 +9,7 @@ export const ballSchema = z.object({
     bowlingTeamId: z.string().length(24),
     
     strikerId: z.string().length(24),
+    nonStrikerId: z.string().length(24).optional(),
     bowlerId: z.string().length(24),
     
     overNumber: z.number().int().nonnegative(),
